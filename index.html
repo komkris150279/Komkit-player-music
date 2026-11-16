@@ -542,6 +542,67 @@
     const DB_NAME = 'NeonSyncStudio100DB';
     const DB_STORE = 'tracks';
     const API_KEY_STORAGE = 'neonsync_gemini_api_key';
+    const PLAYBACK_STATE_STORAGE = 'neonsync_playback_state_v1';
+
+    let lastSavedStateAt = 0;
+    let pendingResumePlay = false;
+
+    // ---------- Auto-Save & Auto-Resume Playback State ----------
+    function savePlaybackState(force = false) {
+      const now = Date.now();
+      if (!force && now - lastSavedStateAt < 1000) return;
+      lastSavedStateAt = now;
+      try {
+        const track = tracks[currentTrackIndex];
+        if (!track) {
+          localStorage.removeItem(PLAYBACK_STATE_STORAGE);
+          return;
+        }
+        const state = {
+          trackId: track.id,
+          trackTitle: track.title,
+          currentTime: isNaN(audioEl.currentTime) ? 0 : +audioEl.currentTime.toFixed(2),
+          wasPlaying: !audioEl.paused || isPlaying,
+          isShuffle: !!isShuffle,
+          isLoop: !!isLoop,
+          volume: audioEl.volume,
+          updatedAt: now
+        };
+        localStorage.setItem(PLAYBACK_STATE_STORAGE, JSON.stringify(state));
+      } catch {}
+    }
+
+    function loadPlaybackState() {
+      try {
+        const raw = localStorage.getItem(PLAYBACK_STATE_STORAGE);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function tryResumePendingAudio() {
+      if (!pendingResumePlay) return;
+      pendingResumePlay = false;
+      initAudioEngine();
+      if (audioEl.paused && currentTrackIndex >= 0) {
+        audioEl.play().then(() => {
+          isPlaying = true;
+          updatePlayPauseUI();
+          savePlaybackState(true);
+        }).catch(() => {});
+      }
+    }
+
+    ['pointerdown', 'keydown', 'touchstart'].forEach((evt) => {
+      document.addEventListener(evt, tryResumePendingAudio, { passive: true });
+    });
+    window.addEventListener('pagehide', () => savePlaybackState(true));
+    window.addEventListener('beforeunload', () => savePlaybackState(true));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') savePlaybackState(true);
+      if (document.visibilityState === 'visible' && isTranscribing) acquireWakeLock();
+    });
 
     function openDB() {
       return new Promise((resolve, reject) => {
@@ -1093,7 +1154,7 @@
       if (modalEl) modalEl.innerHTML = renderHTML(tracks.map((t, idx) => ({ t, idx })));
     }
 
-    function selectAndPlayTrack(idx) {
+    function selectAndPlayTrack(idx, resumeSec = 0, autoPlay = true) {
       if (idx < 0 || idx >= tracks.length) return;
       currentTrackIndex = idx;
       const track = tracks[idx];
@@ -1108,16 +1169,52 @@
 
       renderLyrics();
       renderTrackLists();
-      audioEl.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => { isPlaying = false; updatePlayPauseUI(); });
+
+      const startPlayback = () => {
+        if (resumeSec > 0 && (!audioEl.duration || resumeSec < audioEl.duration - 1)) {
+          try { audioEl.currentTime = resumeSec; } catch {}
+        }
+        savePlaybackState(true);
+        if (autoPlay) {
+          audioEl.play().then(() => {
+            isPlaying = true;
+            pendingResumePlay = false;
+            updatePlayPauseUI();
+            savePlaybackState(true);
+          }).catch(() => {
+            isPlaying = false;
+            pendingResumePlay = true;
+            updatePlayPauseUI();
+            showToast(`⏯️ พร้อมเล่นต่อ "${track.title}" (${formatTime(resumeSec)}) — แตะหน้าจอเพื่อเล่นต่อ`);
+          });
+        } else {
+          isPlaying = false;
+          updatePlayPauseUI();
+        }
+      };
+
+      if (resumeSec > 0) {
+        audioEl.addEventListener('loadedmetadata', startPlayback, { once: true });
+      } else {
+        startPlayback();
+      }
     }
 
     function togglePlayPause() {
+      pendingResumePlay = false;
       if (currentTrackIndex < 0) return tracks.length ? selectAndPlayTrack(0) : showToast('กรุณาเพิ่มไฟล์เพลง MP3 ก่อนกดเล่น');
       initAudioEngine();
       if (audioEl.paused) {
-        audioEl.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch((e) => showToast('เล่นไม่ได้: ' + e.message));
+        audioEl.play().then(() => {
+          isPlaying = true;
+          updatePlayPauseUI();
+          savePlaybackState(true);
+        }).catch((e) => showToast('เล่นไม่ได้: ' + e.message));
       } else {
-        audioEl.pause(); isPlaying = false; updatePlayPauseUI();
+        audioEl.pause();
+        isPlaying = false;
+        updatePlayPauseUI();
+        savePlaybackState(true);
       }
     }
 
@@ -1139,6 +1236,7 @@
       document.getElementById('shuffleBtn').className = isShuffle
         ? 'w-7 h-7 rounded-lg bg-cyan-500/25 text-cyan-300 flex items-center justify-center text-xs border border-cyan-400'
         : 'w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 flex items-center justify-center text-xs border border-slate-700/70';
+      savePlaybackState(true);
       showToast(isShuffle ? '🔀 เปิดสุ่มเพลง' : '🔀 ปิดสุ่มเพลง');
     }
 
@@ -1148,15 +1246,20 @@
       document.getElementById('loopBtn').className = isLoop
         ? 'w-7 h-7 rounded-lg bg-pink-500/25 text-pink-300 flex items-center justify-center text-xs border border-pink-400'
         : 'w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 flex items-center justify-center text-xs border border-slate-700/70';
+      savePlaybackState(true);
       showToast(isLoop ? '🔁 เล่นซ้ำเพลงนี้' : '🔁 ปิดเล่นซ้ำ');
     }
 
     function handleSeekInput(val) {
-      if (audioEl.duration && !isNaN(audioEl.duration)) audioEl.currentTime = (parseFloat(val) / 1000) * audioEl.duration;
+      if (audioEl.duration && !isNaN(audioEl.duration)) {
+        audioEl.currentTime = (parseFloat(val) / 1000) * audioEl.duration;
+        savePlaybackState(true);
+      }
     }
     function setVolume(val) {
       audioEl.volume = parseFloat(val);
       document.getElementById('muteBtn').textContent = audioEl.volume === 0 ? '🔇' : '🔊';
+      savePlaybackState(true);
     }
     function toggleMute() {
       audioEl.muted = !audioEl.muted;
@@ -1175,8 +1278,15 @@
         currentTrackIndex = tracks.length ? 0 : -1;
         updatePlayPauseUI();
         if (currentTrackIndex >= 0) selectAndPlayTrack(0);
-        else { document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง'; renderLyrics(); }
-      } else if (idx < currentTrackIndex) currentTrackIndex--;
+        else {
+          document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง';
+          renderLyrics();
+          savePlaybackState(true);
+        }
+      } else if (idx < currentTrackIndex) {
+        currentTrackIndex--;
+        savePlaybackState(true);
+      }
       renderTrackLists();
     }
 
@@ -1184,6 +1294,7 @@
       tracks.forEach((t) => t.url && URL.revokeObjectURL(t.url));
       tracks = []; currentTrackIndex = -1; audioEl.pause(); audioEl.src = ''; isPlaying = false; updatePlayPauseUI();
       try { (await openDB()).transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).clear(); } catch {}
+      localStorage.removeItem(PLAYBACK_STATE_STORAGE);
       document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง';
       renderTrackLists(); renderLyrics();
       showToast('🗑️ ล้างคลังเพลงทั้งหมดเรียบร้อย');
@@ -1212,9 +1323,6 @@
       try { if (wakeLock) wakeLock.release(); } catch {}
       wakeLock = null;
     }
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && isTranscribing) acquireWakeLock();
-    });
 
     function transcribeEls() {
       return {
@@ -1757,6 +1865,7 @@ ${JSON.stringify(indexedInput)}
       const track = tracks[currentTrackIndex];
       if (track && track.lyrics[idx]) {
         audioEl.currentTime = Math.max(0, track.lyrics[idx].start - syncOffset);
+        savePlaybackState(true);
         if (audioEl.paused) togglePlayPause();
       }
     }
@@ -1925,6 +2034,7 @@ ${JSON.stringify(indexedInput)}
             document.getElementById('durationTimeLabel').textContent = formatTime(audioEl.duration);
             document.getElementById('fullCurrentTime').textContent = formatTime(audioEl.currentTime);
             document.getElementById('fullDurationTime').textContent = formatTime(audioEl.duration);
+            if (!audioEl.paused) savePlaybackState(false);
           }
           updateKaraokeSync();
 
@@ -2276,24 +2386,54 @@ ${JSON.stringify(indexedInput)}
     }
 
     audioEl.addEventListener('ended', () => { if (!isLoop) playNextTrack(); });
-    audioEl.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); });
-    audioEl.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); });
+    audioEl.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); savePlaybackState(true); });
+    audioEl.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); savePlaybackState(true); });
 
     (async function initApp() {
       buildEqControls();
       initParticles();
       updateApiKeyIndicator();
       startRenderLoop();
+
+      const savedState = loadPlaybackState();
+      if (savedState) {
+        if (savedState.isShuffle) {
+          isShuffle = true;
+          document.getElementById('shuffleBtn').className = 'w-7 h-7 rounded-lg bg-cyan-500/25 text-cyan-300 flex items-center justify-center text-xs border border-cyan-400';
+        }
+        if (savedState.isLoop) {
+          isLoop = true;
+          audioEl.loop = true;
+          document.getElementById('loopBtn').className = 'w-7 h-7 rounded-lg bg-pink-500/25 text-pink-300 flex items-center justify-center text-xs border border-pink-400';
+        }
+        if (typeof savedState.volume === 'number' && !isNaN(savedState.volume)) {
+          audioEl.volume = savedState.volume;
+          document.getElementById('volumeSlider').value = savedState.volume;
+        }
+      }
+
       const savedTracks = await loadTracksFromDB();
       if (savedTracks.length) {
         tracks = savedTracks;
         renderTrackLists();
-        currentTrackIndex = 0;
-        audioEl.src = tracks[0].url;
-        document.getElementById('nowPlayingTitle').textContent = tracks[0].title;
-        document.getElementById('nowPlayingSubtitle').textContent = tracks[0].lyrics?.length ? `🎤 ซิงค์เนื้อเพลงแล้ว ${tracks[0].lyrics.length} บรรทัด` : 'พร้อมเล่นเพลง';
-        document.getElementById('fullViewSongTitle').textContent = `🎤 ${tracks[0].title}`;
-        renderLyrics();
+
+        let resumeIdx = 0;
+        let resumeTime = 0;
+        let shouldAutoPlay = false;
+
+        if (savedState) {
+          const foundIdx = tracks.findIndex((t) => t.id === savedState.trackId || t.title === savedState.trackTitle);
+          if (foundIdx >= 0) {
+            resumeIdx = foundIdx;
+            resumeTime = Math.max(0, Number(savedState.currentTime) || 0);
+            shouldAutoPlay = !!savedState.wasPlaying;
+          }
+        }
+
+        selectAndPlayTrack(resumeIdx, resumeTime, shouldAutoPlay);
+        if (resumeTime > 0) {
+          showToast(`⏯️ กู้คืนเพลง "${tracks[resumeIdx].title}" ต่อจากนาทีที่ ${formatTime(resumeTime)}`);
+        }
       } else {
         renderTrackLists();
         renderLyrics();
