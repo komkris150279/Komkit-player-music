@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#070a14" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NeonSync 100%" />
+  <title>NeonSync Studio 100% — เครื่องเล่น MP3 ถอดเนื้อเพลง 100% &amp; อีควอไลเซอร์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-base: #070a14;
+      --bg-panel: rgba(13, 19, 36, 0.95);
+      --border-subtle: rgba(148, 163, 184, 0.16);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; max-width: 100%; height: 100vh; height: 100dvh; overflow: hidden;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(139, 92, 246, 0.2), transparent 36%),
+        radial-gradient(circle at 88% 85%, rgba(0, 245, 212, 0.15), transparent 38%),
+        #070a14;
+      color: #f1f5f9;
+      font-family: 'Noto Sans Thai', 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    button, label, input, textarea { touch-action: manipulation; }
+    button, label { cursor: pointer; user-select: none; }
+    .hidden { display: none !important; pointer-events: none !important; }
+
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.35); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.45); border-radius: 9999px; }
+
+    .app-shell {
+      display: grid; grid-template-rows: auto minmax(0, 1fr);
+      width: 100%; max-width: 100%; height: 100dvh; overflow: hidden;
+      padding-right: max(12px, env(safe-area-inset-right));
+      padding-left: max(6px, env(safe-area-inset-left));
+    }
+    .studio-grid {
+      display: grid; grid-template-columns: 235px minmax(0, 1fr) 265px;
+      gap: 8px; padding: 6px 4px 8px 4px; width: 100%; height: 100%; min-height: 0; overflow: hidden;
+    }
+    @media (max-width: 1120px) {
+      .studio-grid { grid-template-columns: minmax(0, 1fr) 250px; }
+      .left-col-panel { display: none !important; }
+    }
+    @media (max-width: 820px) {
+      .studio-grid { grid-template-columns: minmax(0, 1fr); padding: 4px 2px 6px 2px; }
+      .right-col-panel { display: none !important; }
+    }
+
+    .glass-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      min-width: 0;
+    }
+
+    /* Word-Level Dual-Layer Karaoke Sweep */
+    .lyric-line {
+      position: relative; padding: 6px 12px; border-radius: 10px; cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.2s ease, opacity 0.22s ease;
+      opacity: 0.44; text-align: center; line-height: 1.5;
+      font-size: clamp(0.95rem, 1.55vw, 1.22rem); font-weight: 600; word-break: break-word;
+    }
+    .lyric-line:hover { opacity: 0.85; background: rgba(255, 255, 255, 0.05); }
+    .lyric-line.past { opacity: 0.58; }
+    .lyric-line.active {
+      opacity: 1; transform: scale(1.03);
+      background: linear-gradient(90deg, rgba(0, 245, 212, 0.12), rgba(139, 92, 246, 0.16), rgba(255, 42, 133, 0.12));
+      border: 1px solid rgba(0, 245, 212, 0.36);
+      box-shadow: 0 4px 20px rgba(0, 245, 212, 0.14);
+      font-weight: 800;
+    }
+    .lyric-text-wrap { position: relative; display: inline-block; max-width: 100%; }
+    .lyric-base { color: #94a3b8; }
+    .lyric-line.active .lyric-base { color: rgba(241, 245, 249, 0.34); }
+    .lyric-fill {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, #00f5d4 0%, #38bdf8 50%, #ff2a85 100%);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent; -webkit-text-fill-color: transparent;
+      clip-path: inset(0 100% 0 0); pointer-events: none;
+      filter: drop-shadow(0 0 8px rgba(0, 245, 212, 0.45));
+      will-change: clip-path;
+    }
+    #fullLyricsView .lyric-line { font-size: clamp(1.25rem, 2.8vw, 2.3rem); padding: 10px 16px; margin-bottom: 4px; }
+    #fullLyricsView .lyric-line.active { transform: scale(1.04); }
+
+    input[type="range"].seek-slider {
+      -webkit-appearance: none; appearance: none; height: 6px; border-radius: 9999px;
+      background: rgba(51, 65, 85, 0.85); outline: none; cursor: pointer;
+    }
+    input[type="range"].seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: #00f5d4; box-shadow: 0 0 10px rgba(0, 245, 212, 0.85); cursor: pointer;
+    }
+
+    .eq-slider-wrap { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; }
+    .eq-vertical-box { position: relative; width: 22px; height: 92px; display: flex; align-items: center; justify-content: center; }
+    input[type="range"].eq-range {
+      -webkit-appearance: none; appearance: none; width: 88px; height: 5px; transform: rotate(-90deg);
+      background: rgba(51, 65, 85, 0.9); border-radius: 9999px; outline: none; cursor: pointer;
+    }
+    input[type="range"].eq-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 13px; height: 13px; border-radius: 50%;
+      background: linear-gradient(135deg, #00f5d4, #8b5cf6); border: 2px solid #070a14;
+      box-shadow: 0 0 7px rgba(0, 245, 212, 0.7); cursor: pointer;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 12px rgba(0, 245, 212, 0.3), 0 0 22px rgba(255, 42, 133, 0.22); }
+      50% { box-shadow: 0 0 18px rgba(0, 245, 212, 0.55), 0 0 30px rgba(255, 42, 133, 0.42); }
+    }
+    .ai-glow-btn { animation: pulseGlow 2.4s infinite ease-in-out; }
+  </style>
+</head>
+<body>
+  <audio id="audioPlayer" preload="metadata"></audio>
+  <input id="globalAudioFileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.webm,.lrc,.txt" multiple class="sr-only" onchange="handleFileSelection(event)" />
+  <input id="globalLrcFileInput" type="file" accept=".lrc,.txt,text/plain" multiple class="sr-only" onchange="handleFileSelection(event)" />
+
+  <div class="app-shell">
+    <!-- TOP HEADER -->
+    <header class="flex items-center justify-between px-2 py-1.5 bg-[#090e1d]/95 border-b border-slate-800/80 z-30 gap-1 min-w-0">
+      <div class="flex items-center gap-1 min-w-0">
+        <div class="flex items-center gap-1.5 pr-1 shrink-0">
+          <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center font-extrabold text-slate-950 text-[11px] shadow">NS</div>
+          <span class="font-extrabold text-xs tracking-tight bg-gradient-to-r from-cyan-300 via-white to-pink-400 bg-clip-text text-transparent hidden md:inline">NeonSync 100%</span>
+        </div>
+        <button id="tabMainView" type="button" onclick="setActiveView('main')" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 whitespace-nowrap">🎵 หลัก</button>
+        <button id="tabFullLyricsView" type="button" onclick="setActiveView('full')" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 hover:bg-pink-500/20 text-slate-200 hover:text-pink-300 border border-slate-700/80 whitespace-nowrap">🎤 เต็มจอ</button>
+      </div>
+
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="openModal('libraryModal')" class="px-1.5 sm:px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/90 hover:bg-violet-500/20 text-amber-300 border border-slate-700/80 flex items-center gap-1 whitespace-nowrap">
+          📂 <span class="hidden xs:inline">คลัง</span><span id="headerTrackCount" class="px-1 rounded bg-slate-950 text-cyan-300 text-[10px]">0</span>
+        </button>
+        <button type="button" onclick="openModal('eqModal')" class="px-1.5 sm:px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/90 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/35 flex items-center gap-1 whitespace-nowrap">
+          🎛️ EQ <span id="headerEqStatusBadge" class="px-1 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-300">ON</span>
+        </button>
+        <button type="button" onclick="openApiKeyModal()" class="px-1.5 sm:px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-400/45 flex items-center gap-1 whitespace-nowrap">
+          🔑 <span class="hidden sm:inline">API Key</span><span id="apiKeyDot" class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+        </button>
+        <div class="hidden lg:flex items-center bg-slate-900/90 border border-slate-700/80 rounded-lg px-1 py-0.5 text-[10px]">
+          <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-1.5 py-0.5 hover:text-cyan-300 font-bold">-0.1s</button>
+          <span id="syncOffsetBadge" class="px-1 font-mono text-cyan-300 font-bold">+0.00s</span>
+          <button type="button" onclick="adjustSyncOffset(0.1)" class="px-1.5 py-0.5 hover:text-pink-300 font-bold">+0.1s</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 3-COLUMN STUDIO -->
+    <main class="studio-grid">
+      <!-- LEFT: LIBRARY -->
+      <section class="left-col-panel glass-card flex flex-col overflow-hidden p-2.5">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-extrabold text-slate-100">📂 คลังเพลง</span>
+            <span id="sidebarTrackCount" class="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold">0 เพลง</span>
+          </div>
+          <button type="button" onclick="openModal('libraryModal')" class="text-[10px] px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">ขยายคลัง</button>
+        </div>
+        <div class="flex gap-1.5 mb-2">
+          <input id="sidebarSearchInput" type="text" oninput="renderTrackLists()" placeholder="ค้นหาเพลงในคลัง..." class="flex-1 min-w-0 bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400" />
+          <label for="globalLrcFileInput" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-amber-300 flex items-center shrink-0">
+            📄 .LRC
+          </label>
+        </div>
+        <div id="sidebarTrackList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-0.5"></div>
+      </section>
+
+      <!-- CENTER: VISUALIZER + ACTION ROW + LYRICS + TRANSPORT -->
+      <section class="glass-card flex flex-col overflow-hidden p-2 sm:p-2.5 relative">
+        <div id="visualizerStageBox" onclick="cycleVisualizerMode()" title="คลิกเพื่อเปลี่ยนลูกเล่นคลื่นเสียง"
+          class="relative w-full h-[132px] sm:h-[148px] shrink-0 rounded-xl overflow-hidden border border-slate-800/90 bg-[#050811] mb-2 cursor-pointer">
+          <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
+          <div class="absolute top-2 left-2 flex items-center gap-2 pointer-events-none bg-slate-950/65 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 max-w-[88%]">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-[10px] font-extrabold text-slate-950 shrink-0 shadow">♪</div>
+            <div class="min-w-0">
+              <div id="nowPlayingTitle" class="text-xs font-extrabold text-white truncate">ยังไม่มีเพลงในคลัง</div>
+              <div id="nowPlayingSubtitle" class="text-[10px] text-cyan-300/90 truncate">กดปุ่ม "+ เพิ่มเพลง MP3" ด้านล่าง</div>
+            </div>
+          </div>
+          <div class="absolute bottom-1.5 left-2 right-2 flex items-center justify-between pointer-events-none">
+            <span id="visModeCaption" class="text-[10px] font-bold text-slate-200/90 bg-slate-950/65 px-2 py-0.5 rounded-md border border-white/10 truncate">🌈 คลื่นสีรุ้ง (1/18) — แท่งความถี่ไล่เฉดสีรุ้งพร้อมยอดพีคและเงาสะท้อน</span>
+          </div>
+        </div>
+
+        <!-- 3-WAY ACTION BAR -->
+        <div class="grid grid-cols-3 gap-1.5 shrink-0 mb-1.5">
+          <label for="globalAudioFileInput" class="h-9 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 active:scale-[0.98] text-slate-950 font-extrabold text-[10px] sm:text-xs flex items-center justify-center gap-1 shadow-md px-1">
+            <span>➕</span><span class="truncate">เพิ่มเพลง MP3</span>
+          </label>
+          <button type="button" onclick="transcribeCurrentTrack100()"
+            class="ai-glow-btn h-9 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 active:scale-[0.98] text-white font-extrabold text-[10px] sm:text-xs flex items-center justify-center gap-1 shadow-md px-1 border border-pink-300/30">
+            <span>✨</span><span class="truncate">ถอดเนื้อ 100%</span>
+          </button>
+          <button id="visDropdownTrigger" type="button" onclick="toggleVisPopover(event)"
+            class="h-9 rounded-xl bg-gradient-to-r from-amber-500/90 to-orange-500/90 hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] text-slate-950 font-extrabold text-[10px] sm:text-xs flex items-center justify-center gap-1 shadow-md px-1">
+            <span id="visBtnLabel" class="truncate">🎨 คลื่น 18 แบบ ▾</span>
+          </button>
+        </div>
+
+        <!-- UTILITY BAR -->
+        <div class="flex items-center justify-between gap-1 shrink-0 mb-1.5 text-[10px] sm:text-[11px] flex-wrap">
+          <div class="flex items-center gap-1 min-w-0 flex-wrap">
+            <button type="button" onclick="proofreadCurrentTrackLyrics()" class="px-1.5 sm:px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 font-bold whitespace-nowrap">🔍 ตรวจแก้คำ 100%</button>
+            <button type="button" onclick="openLyricEditorModal()" class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 font-semibold whitespace-nowrap">📝 แก้ไข / Sync</button>
+            <button type="button" onclick="exportCurrentLrc()" class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 border border-slate-700/80 font-semibold whitespace-nowrap">💾 .LRC</button>
+            <button type="button" onclick="transcribeAllTracks()" class="px-1.5 sm:px-2 py-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-400/40 font-bold whitespace-nowrap">✨ ถอดทั้งคลัง</button>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" onclick="adjustSyncOffset(-0.1)" class="lg:hidden px-1.5 py-1 rounded-lg bg-slate-800 text-cyan-300 font-bold">-0.1s</button>
+            <button type="button" onclick="adjustSyncOffset(0.1)" class="lg:hidden px-1.5 py-1 rounded-lg bg-slate-800 text-pink-300 font-bold">+0.1s</button>
+            <button type="button" onclick="setActiveView('full')" class="hidden sm:flex px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-pink-500/20 text-pink-300 border border-slate-700/80 font-semibold whitespace-nowrap">⛶ เต็มจอ</button>
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div id="transcribeProgressBox" class="hidden shrink-0 mb-2 bg-slate-900/95 border border-cyan-500/40 rounded-xl p-2">
+          <div class="flex items-start justify-between gap-2 mb-1">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 text-[11px] min-w-0">
+                <span id="transcribeQueueBadge" class="hidden shrink-0 px-1.5 py-0.5 rounded bg-violet-500/25 text-violet-200 font-extrabold text-[10px]">1/1</span>
+                <span class="shrink-0 text-slate-400 font-semibold">🎤 กำลังถอดเพลง:</span>
+                <span id="transcribeTrackName" class="font-extrabold text-white truncate">-</span>
+              </div>
+              <div id="transcribeStatusText" class="block mt-0.5 text-[11px] font-semibold text-cyan-300 break-words leading-snug">กำลังเตรียมถอดเนื้อเพลง...</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span id="transcribePercentText" class="font-mono font-extrabold text-pink-400 text-[11px]">0%</span>
+              <button id="transcribeStopBtn" type="button" onclick="cancelTranscription()" class="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[10px] font-extrabold border border-rose-400/40">⏹ หยุด</button>
+            </div>
+          </div>
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div id="transcribeProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- LYRICS STAGE -->
+        <div class="relative flex-1 min-h-0 rounded-xl bg-slate-950/65 border border-slate-800/80 overflow-hidden flex flex-col">
+          <div id="emptyLyricsState" class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-10">
+            <div class="w-11 h-11 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl mb-2">🎤</div>
+            <h2 class="text-sm sm:text-base font-extrabold text-white mb-1">เวทีเนื้อเพลงคาราโอเกะพร้อมใช้งาน 100%</h2>
+            <p class="text-[11px] text-slate-400 max-w-sm mb-3">
+              กดปุ่ม <span class="text-cyan-300 font-bold">"+ เพิ่มเพลง MP3"</span> แล้วกด <span class="text-pink-400 font-bold">"✨ ถอดเนื้อ 100%"</span> เพื่อถอดเนื้อร้องละเอียดระดับ 24kHz HD พร้อมตรวจแก้คำอัตโนมัติ
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <label for="globalAudioFileInput" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs shadow inline-flex items-center">
+                ➕ เลือกไฟล์เพลง MP3
+              </label>
+              <button type="button" onclick="openApiKeyModal()" class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs">
+                🔑 ตั้งค่า Gemini API Key
+              </button>
+            </div>
+          </div>
+          <div id="lyricsContainer" class="flex-1 overflow-y-auto custom-scroll px-3 py-8 space-y-1.5 scroll-smooth"></div>
+        </div>
+
+        <!-- TRANSPORT -->
+        <div class="shrink-0 pt-2 mt-1.5 border-t border-slate-800/80">
+          <div class="flex items-center gap-1.5 mb-1.5">
+            <span id="currentTimeLabel" class="text-[10px] sm:text-[11px] font-mono text-cyan-300 w-9 text-right shrink-0">00:00</span>
+            <input id="seekSlider" type="range" min="0" max="1000" value="0" class="seek-slider flex-1 min-w-0" oninput="handleSeekInput(this.value)" />
+            <span id="durationTimeLabel" class="text-[10px] sm:text-[11px] font-mono text-slate-400 w-9 shrink-0">00:00</span>
+          </div>
+          <div class="flex items-center justify-between gap-1">
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="shuffleBtn" type="button" onclick="toggleShuffle()" class="w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 hover:text-white flex items-center justify-center text-xs border border-slate-700/70">🔀</button>
+              <button id="loopBtn" type="button" onclick="toggleLoop()" class="w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 hover:text-white flex items-center justify-center text-xs border border-slate-700/70">🔁</button>
+              <button type="button" onclick="openModal('eqModal')" class="lg:hidden px-1.5 h-7 rounded-lg bg-slate-800 text-cyan-300 text-[10px] font-bold border border-cyan-500/35">🎛️ EQ</button>
+              <button type="button" onclick="openModal('libraryModal')" class="md:hidden px-1.5 h-7 rounded-lg bg-slate-800 text-amber-300 text-[10px] font-bold border border-slate-700">📂 คลัง</button>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="playPrevTrack()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center text-xs border border-slate-700">⏮</button>
+              <button id="playPauseBtn" type="button" onclick="togglePlayPause()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold flex items-center justify-center text-base shadow-lg">▶</button>
+              <button type="button" onclick="playNextTrack()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center text-xs border border-slate-700">⏭</button>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="muteBtn" type="button" onclick="toggleMute()" class="text-xs text-slate-300">🔊</button>
+              <input id="volumeSlider" type="range" min="0" max="1" step="0.02" value="0.9" oninput="setVolume(this.value)" class="seek-slider w-12 sm:w-16" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: 10-BAND EQUALIZER & DSP -->
+      <aside class="right-col-panel glass-card flex flex-col overflow-hidden p-2.5">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
+          <span class="text-xs font-extrabold text-white">🎛️ อีควอไลเซอร์ 10 แบนด์</span>
+          <button id="sideEqToggleBtn" type="button" onclick="toggleEqMaster()" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">● เปิด EQ</button>
+        </div>
+        <div class="mb-2">
+          <div class="text-[10px] font-bold text-slate-400 mb-1">พรีเซ็ตเสียงสำเร็จรูป</div>
+          <div id="sideEqPresets" class="grid grid-cols-4 gap-1"></div>
+        </div>
+        <div class="flex-1 min-h-0 bg-slate-950/75 border border-slate-800/90 rounded-xl p-2 flex flex-col justify-between mb-2">
+          <div id="sideEqBandsContainer" class="grid grid-cols-10 gap-0.5 h-full items-center"></div>
+        </div>
+        <div class="space-y-2 bg-slate-900/75 border border-slate-800/80 rounded-xl p-2.5 text-[11px]">
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="font-bold text-cyan-300">🔊 เพิ่มพลังเบส</span><span id="bassBoostLabel" class="font-mono text-slate-300">0 dB</span></div>
+            <input id="bassBoostSlider" type="range" min="0" max="15" step="1" value="0" oninput="setBassBoost(this.value)" class="seek-slider w-full" />
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="font-bold text-pink-300">🌌 เสียงก้องฮอลล์</span><span id="echoWetLabel" class="font-mono text-slate-300">0%</span></div>
+            <input id="echoWetSlider" type="range" min="0" max="0.65" step="0.05" value="0" oninput="setEchoWet(this.value)" class="seek-slider w-full" />
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5"><span class="font-bold text-amber-300">⚡ ความเร็วเพลง</span><span id="speedLabel" class="font-mono text-slate-300">1.00x</span></div>
+            <input id="speedSlider" type="range" min="0.75" max="1.35" step="0.05" value="1" oninput="setPlaybackSpeed(this.value)" class="seek-slider w-full" />
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- VISUALIZER POPOVER MENU -->
+  <div id="visPopoverMenu" class="hidden fixed z-[9999] w-[92vw] max-w-[390px] bg-[#0d1428] border border-cyan-400/45 rounded-2xl shadow-2xl p-2.5 text-xs">
+    <div class="flex items-center justify-between px-1.5 pb-1.5 border-b border-slate-800 mb-2 gap-1">
+      <span class="font-extrabold text-cyan-300 truncate">🎨 คลื่นเสียง 18 แบบ</span>
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="randomVisualizerMode()" class="px-2 py-0.5 rounded bg-violet-500/25 hover:bg-violet-500/40 text-violet-200 font-bold text-[10px] border border-violet-400/35">🎲 สุ่ม</button>
+        <button type="button" onclick="toggleVisualizerEnabled()" id="visPowerToggleBtn" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px]">เปิดอยู่</button>
+        <button type="button" onclick="document.getElementById('visPopoverMenu').classList.add('hidden')" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px]">✕</button>
+      </div>
+    </div>
+    <div id="visModeOptionsList" class="grid grid-cols-2 gap-1.5 max-h-[56vh] overflow-y-auto custom-scroll pr-0.5"></div>
+  </div>
+
+  <!-- FULLSCREEN LYRICS OVERLAY -->
+  <div id="fullLyricsView" class="hidden fixed inset-0 z-[800] bg-[#060913]/98 backdrop-blur-2xl flex flex-col pr-3">
+    <div class="flex items-center justify-between px-3 py-2 border-b border-slate-800/90 bg-slate-950/80 gap-2">
+      <div class="min-w-0">
+        <div id="fullViewSongTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">โหมดเนื้อร้องเต็มหน้าจอ</div>
+        <div class="text-[10px] text-cyan-300">แตะบรรทัดใดก็ได้เพื่อกระโดดไปยังท่อนนั้น</div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="transcribeCurrentTrack100()" class="px-2 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-[10px] sm:text-[11px]">✨ ถอดเนื้อ</button>
+        <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-1.5 py-1.5 rounded-lg bg-slate-800 text-cyan-300 font-bold text-[10px]">-0.1s</button>
+        <button type="button" onclick="adjustSyncOffset(0.1)" class="px-1.5 py-1.5 rounded-lg bg-slate-800 text-pink-300 font-bold text-[10px]">+0.1s</button>
+        <button type="button" onclick="setActiveView('main')" class="px-2 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 font-extrabold text-[10px]">✕ ปิด</button>
+      </div>
+    </div>
+    <div id="fullTranscribeBanner" class="hidden px-4 py-1.5 bg-violet-500/15 border-b border-violet-400/30 text-[11px] sm:text-xs font-bold text-violet-200 truncate"></div>
+    <div id="fullLyricsContainer" class="flex-1 overflow-y-auto custom-scroll px-4 py-12 space-y-2 scroll-smooth"></div>
+    <div class="px-4 py-2.5 border-t border-slate-800/90 bg-slate-950/90 flex items-center gap-2.5">
+      <button id="fullPlayPauseBtn" type="button" onclick="togglePlayPause()" class="w-9 h-9 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold flex items-center justify-center shrink-0">▶</button>
+      <span id="fullCurrentTime" class="text-xs font-mono text-cyan-300">00:00</span>
+      <input id="fullSeekSlider" type="range" min="0" max="1000" value="0" oninput="handleSeekInput(this.value)" class="seek-slider flex-1 min-w-0" />
+      <span id="fullDurationTime" class="text-xs font-mono text-slate-400">00:00</span>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div id="apiKeyModal" class="hidden fixed inset-0 z-[950] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="w-full max-w-md bg-[#0c1326] border border-amber-400/45 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-amber-300">🔑 ตั้งค่า Gemini API Key (สำหรับถอดเนื้อเพลงบนมือถือ)</h3>
+        <button type="button" onclick="closeModal('apiKeyModal')" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed mb-3">
+        ใส่ <b>Gemini API Key</b> ของคุณด้านล่าง ระบบจะบันทึกไว้ในเครื่องอัตโนมัติ พร้อมระบบสลับโมเดลสำรองเมื่อเซิร์ฟเวอร์หนาแน่น
+      </p>
+      <div class="mb-3">
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-[11px] font-bold text-slate-300">รหัส Gemini API Key (ขึ้นต้นด้วย AIzaSy...)</label>
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-cyan-300 underline">ขอรับ Key ฟรีที่นี่ ↗</a>
+        </div>
+        <input id="geminiApiKeyInput" type="password" placeholder="วางรหัส AIzaSy... ที่นี่" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-mono outline-none" />
+      </div>
+      <div id="apiKeyTestResult" class="hidden mb-3 px-3 py-2 rounded-xl text-xs font-semibold"></div>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onclick="testGeminiApiKey()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700">⚡ ทดสอบการเชื่อมต่อ</button>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="clearGeminiApiKey()" class="px-3 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs">ลบ Key</button>
+          <button type="button" onclick="saveGeminiApiKey()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold text-xs shadow">💾 บันทึก API Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MUSIC LIBRARY MODAL -->
+  <div id="libraryModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="w-full max-w-xl max-h-[86vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-white">📂 คลังเพลงทั้งหมด (บันทึกในเครื่องอัตโนมัติ)</h3>
+        <button type="button" onclick="closeModal('libraryModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <label for="globalAudioFileInput" class="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs inline-flex items-center">
+          ➕ เพิ่มไฟล์ MP3 / .LRC
+        </label>
+        <button type="button" onclick="transcribeAllTracks()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-xs">✨ ถอดเนื้อทั้งคลัง</button>
+        <button type="button" onclick="clearAllTracks()" class="px-3 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs ml-auto">🗑️ ล้างคลังทั้งหมด</button>
+      </div>
+      <div id="modalTrackList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- EQUALIZER MODAL -->
+  <div id="eqModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="w-full max-w-md bg-[#0c1326] border border-cyan-500/40 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <h3 class="text-sm font-extrabold text-white">🎛️ อีควอไลเซอร์ 10 แบนด์</h3>
+          <button id="modalEqToggleBtn" type="button" onclick="toggleEqMaster()" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">● เปิด EQ</button>
+        </div>
+        <button type="button" onclick="closeModal('eqModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
+      </div>
+      <div id="modalEqPresets" class="grid grid-cols-4 gap-1.5 mb-3"></div>
+      <div class="bg-slate-950/85 border border-slate-800 rounded-xl p-2.5 h-32 mb-3">
+        <div id="modalEqBandsContainer" class="grid grid-cols-10 gap-1 h-full items-center"></div>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div>
+          <div class="flex justify-between mb-0.5"><span class="font-bold text-cyan-300">🔊 เพิ่มพลังเบส</span><span id="modalBassLabel" class="font-mono">0 dB</span></div>
+          <input id="modalBassSlider" type="range" min="0" max="15" step="1" value="0" oninput="setBassBoost(this.value)" class="seek-slider w-full" />
+        </div>
+        <div>
+          <div class="flex justify-between mb-0.5"><span class="font-bold text-pink-300">🌌 เสียงก้องฮอลล์</span><span id="modalEchoLabel" class="font-mono">0%</span></div>
+          <input id="modalEchoSlider" type="range" min="0" max="0.65" step="0.05" value="0" oninput="setEchoWet(this.value)" class="seek-slider w-full" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LYRIC EDITOR & TAP-SYNC STUDIO MODAL -->
+  <div id="lyricEditorModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="w-full max-w-xl max-h-[88vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-white">📝 แก้ไขเนื้อเพลง / ซิงค์อัตโนมัติ / Tap-Sync</h3>
+        <button type="button" onclick="closeModal('lyricEditorModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
+      </div>
+      <textarea id="lyricEditorTextarea" rows="10" placeholder="วางเนื้อเพลงที่นี่ บรรทัดละ 1 ท่อนร้อง..." class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 font-mono leading-relaxed focus:outline-none focus:border-cyan-400 mb-3"></textarea>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="autoAlignPlainLyricsToVocal()" class="px-2.5 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-xs">⚡ ซิงค์อัตโนมัติ</button>
+          <button type="button" onclick="proofreadEditorTextarea()" class="px-2.5 py-2 rounded-xl bg-violet-500/20 border border-violet-400/40 text-violet-200 font-extrabold text-xs">🔍 เกลาคำสะกด</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="tapSyncNextLine()" class="px-2.5 py-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 font-extrabold text-xs">👆 แตะจับจังหวะ</button>
+          <button type="button" onclick="saveEditedLyrics()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs">💾 บันทึกเนื้อเพลง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastBox" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none opacity-0 transition-opacity duration-300 w-max max-w-[90vw]">
+    <div id="toastMessage" class="px-4 py-2 rounded-2xl bg-slate-900/95 border border-cyan-400/50 text-cyan-200 text-xs font-bold shadow-xl text-center leading-snug"></div>
+  </div>
+  <script>
+    const EQ_FREQS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    const EQ_LABELS = ['32', '64', '125', '250', '500', '1K', '2K', '4K', '8K', '16K'];
+    const EQ_PRESETS = {
+      Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      Pop: [-1, 2, 4, 4, 1, -1, -1, 2, 3, 4],
+      Rock: [5, 4, 2, -1, -2, 0, 3, 4, 5, 5],
+      Bass: [7, 6, 4, 2, 0, 0, 0, 1, 2, 2],
+      Vocal: [-2, -2, 0, 2, 5, 5, 4, 2, 0, -1],
+      Jazz: [3, 2, 1, 2, -1, -1, 0, 2, 3, 4],
+      EDM: [6, 5, 2, 0, -2, 1, 3, 4, 6, 6],
+      Live: [3, 2, 0, 1, 2, 2, 3, 4, 4, 3]
+    };
+
+    const VIS_MODES = [
+      { id: 'rainbow', icon: '🌈', name: 'คลื่นสีรุ้ง', desc: 'แท่งความถี่ไล่เฉดสีรุ้งพร้อมยอดพีคและเงาสะท้อน' },
+      { id: 'wave', icon: '〰️', name: 'คลื่นเสียงนีออน', desc: 'ริบบิ้นคลื่นเสียงเรืองแสง 4 ชั้นซ้อนมิติ' },
+      { id: 'ring', icon: '🔮', name: 'วงแหวนจักรวาล', desc: 'วงแหวนสเปกตรัมหมุนรอบศูนย์กลางเต้นตามจังหวะเบส' },
+      { id: 'aurora', icon: '🔥', name: 'เปลวไฟออโรร่า', desc: 'คลื่นแสงออโรร่าสมมาตรไล่เฉดสีชมพู-ฟ้า-ทอง' },
+      { id: 'particles', icon: '💫', name: 'กาแล็กซี่พาร์ติเคิล', desc: 'ละอองพลังงานหลากสีเชื่อมโยงเส้นแสงตามจังหวะดนตรี' },
+      { id: 'mirror', icon: '🎛️', name: 'สเปกตรัมคู่', desc: 'แถบ LED สะท้อนบน-ล่างแบบสตูดิโอมืออาชีพ' },
+      { id: 'dna', icon: '🧬', name: 'เกลียวดีเอ็นเอ', desc: 'เกลียวคู่เรืองแสงหมุนสลับสีฟ้า-ชมพู-ทอง' },
+      { id: 'fireworks', icon: '🎆', name: 'ดอกไม้ไฟนีออน', desc: 'ประกายไฟพุ่งกระจายตามจังหวะเบสและเสียงร้อง' },
+      { id: 'ocean', icon: '🌊', name: 'คลื่นมหาสมุทรสีรุ้ง', desc: 'ภูเขาคลื่นซ้อนกัน 5 ชั้นไล่เฉดสีพาสเทลนีออน' },
+      { id: 'crystal', icon: '💎', name: 'คริสตัลคาไลโดสโคป', desc: 'ลวดลายเรขาคณิตหมุนสมมาตร 8 แฉกหลากสี' },
+      { id: 'lightning', icon: '⚡', name: 'ฟ้าผ่าพลาสม่า', desc: 'สายฟ้าพลังงานสูงวิ่งเชื่อมระหว่างขั้วซ้าย-ขวา' },
+      { id: 'planet', icon: '🪐', name: 'ดาวเสาร์วงแหวน', desc: 'ดาวเคราะห์เรืองแสงพร้อมวงแหวนดาวเคราะห์น้อยหมุนรอบ' },
+      { id: 'piano', icon: '🎹', name: 'เปียโนเรนโบว์', desc: 'แถบคีย์แสงไฟวิ่งขึ้นลงพร้อมละอองดาวลอยขึ้น' },
+      { id: 'lotus', icon: '🌸', name: 'ดอกบัวแสงเลเซอร์', desc: 'กลีบดอกไม้เลเซอร์บานหุบตามความถี่เสียง' },
+      { id: 'blocks', icon: '🧱', name: 'บล็อก LED อาร์เคด', desc: 'ก้อนบล็อกดิจิทัลเรียงชั้นแบบเครื่องเสียงยุค 90s' },
+      { id: 'tunnel', icon: '🌀', name: 'อุโมงค์วาร์ปความเร็วแสง', desc: 'วงแหวนสีรุ้งพุ่งเข้าหาหน้าจอแบบ 3 มิติ' },
+      { id: 'heartbeat', icon: '❤️', name: 'หัวใจเต้นตามจังหวะ', desc: 'คลื่นชีพจร EKG เรืองแสงพร้อมหัวใจเต้นตามเบส' },
+      { id: 'peacock', icon: '🦚', name: 'หางนกยูงสีทอง', desc: 'แพนหางแสงสีรุ้งแผ่รัศมีโค้งสวยงามเต็มเวที' }
+    ];
+
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+
+    const TRANSCRIPTION_SYSTEM_INSTRUCTION = `คุณคือนักแกะเนื้อเพลงและผู้เชี่ยวชาญด้านภาษาศาสตร์ระดับมืออาชีพ (ไทย, อีสาน, ลาว, อังกฤษ)
+หน้าที่ของคุณคือการฟังไฟล์เสียงเพลงและถอดเนื้อร้องออกมาให้ถูกต้อง 100% ตรงตามเสียงที่นักร้องออกเสียงจริงทุกคำ
+
+กฎเหล็กในการถอดเนื้อเพลง:
+1. เขียนสะกดคำให้ตรงตามสำเนียงและภาษาที่ร้องจริง 100% ห้ามแปลเปลี่ยนสำเนียงเด็ดขาด:
+   - หากเป็นสำเนียงอีสานหรือลาว ให้สะกดคำตามเสียงร้องจริง เช่น "ฮัก" (ไม่เปลี่ยนเป็น รัก), "บ่" (ไม่เปลี่ยนเป็น ไม่), "อ้าย", "น้อง", "คึดฮอด", "เฮ็ด", "เว้า", "สิ", "แม่น", "กะ", "เด้อ", "จั่งได๋", "ซำได๋", "ฮู้บ่", "แนม", "ย่าง", "ป๋า", "ถิ่ม"
+   - หากเป็นภาษากลาง ให้สะกดพยัญชนะ สระ และวรรณยุกต์ให้ถูกต้องตามหลักภาษาไทย
+   - หากมีท่อนภาษาอังกฤษ ให้สะกดคำภาษาอังกฤษให้ถูกต้องตามหลักไวยากรณ์
+2. ห้ามตกหล่นคำร้อง แม้เป็นคำสร้อย คำเอื้อน คำอุทาน หรือท่อนแร็ปเร็วๆ ให้ถอดออกมาให้ครบทุกคำ
+3. ห้ามแต่งเนื้อเพลงเองในท่อนที่เป็นเสียงดนตรีล้วน (Intro / Solo / Outro) หากไม่มีเสียงร้องให้ส่ง {"lines":[]}
+4. จับเวลาเริ่มต้น (start) และสิ้นสุด (end) ของแต่ละบรรทัด และเวลาของแต่ละคำใน "words" ให้แม่นยำตามเสียงร้องจริง`;
+
+    let tracks = [];
+    let currentTrackIndex = -1;
+    let isPlaying = false;
+    let isShuffle = false;
+    let isLoop = false;
+    let syncOffset = 0;
+    let isTranscribing = false;
+
+    let visModeIndex = 0;
+    let visEnabled = true;
+    let peakCaps = new Array(64).fill(0);
+    let particles = [];
+    let sparks = [];
+    let ringRotation = 0;
+
+    let audioCtx = null;
+    let mediaSource = null;
+    let analyserNode = null;
+    let eqFilters = [];
+    let bassFilter = null;
+    let convolverNode = null;
+    let dryGainNode = null;
+    let wetGainNode = null;
+    let eqMasterEnabled = true;
+    let currentEqGains = [...EQ_PRESETS.Flat];
+    let currentPresetName = 'Flat';
+    let currentBassBoost = 0;
+    let currentEchoWet = 0;
+
+    const audioEl = document.getElementById('audioPlayer');
+    const DB_NAME = 'NeonSyncStudio100DB';
+    const DB_STORE = 'tracks';
+    const API_KEY_STORAGE = 'neonsync_gemini_api_key';
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: 'id' });
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveTrackToDB(track) {
+      try {
+        const db = await openDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          tx.objectStore(DB_STORE).put({
+            id: track.id, title: track.title, artist: track.artist,
+            duration: track.duration || 0, blob: track.blob || null, lyrics: track.lyrics || []
+          });
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+      } catch { return false; }
+    }
+
+    async function loadTracksFromDB() {
+      try {
+        const db = await openDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const req = tx.objectStore(DB_STORE).getAll();
+          req.onsuccess = () => {
+            resolve((req.result || []).map((item) => ({
+              ...item, url: item.blob ? URL.createObjectURL(item.blob) : ''
+            })).filter((t) => t.url));
+          };
+          req.onerror = () => resolve([]);
+        });
+      } catch { return []; }
+    }
+
+    async function deleteTrackFromDB(id) {
+      try {
+        const db = await openDB();
+        db.transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).delete(id);
+      } catch {}
+    }
+
+    function getSavedApiKey() { return (localStorage.getItem(API_KEY_STORAGE) || '').trim(); }
+
+    function updateApiKeyIndicator() {
+      const dot = document.getElementById('apiKeyDot');
+      if (dot) {
+        dot.className = getSavedApiKey()
+          ? 'w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]'
+          : 'w-1.5 h-1.5 rounded-full bg-rose-400';
+      }
+    }
+
+    function openApiKeyModal() {
+      document.getElementById('geminiApiKeyInput').value = getSavedApiKey();
+      document.getElementById('apiKeyTestResult').classList.add('hidden');
+      openModal('apiKeyModal');
+    }
+
+    function saveGeminiApiKey() {
+      const val = document.getElementById('geminiApiKeyInput').value.trim();
+      if (!val) return showToast('กรุณาวางรหัส Gemini API Key ก่อนบันทึก');
+      localStorage.setItem(API_KEY_STORAGE, val);
+      updateApiKeyIndicator();
+      closeModal('apiKeyModal');
+      showToast('✅ บันทึก Gemini API Key เรียบร้อยแล้ว!');
+    }
+
+    function clearGeminiApiKey() {
+      localStorage.removeItem(API_KEY_STORAGE);
+      document.getElementById('geminiApiKeyInput').value = '';
+      updateApiKeyIndicator();
+      showToast('ลบ API Key ออกจากเครื่องแล้ว');
+    }
+
+    // ---------- Gemini model discovery + fallback + timeout ----------
+    let cancelRequested = false;
+    let activeAbortController = null;
+
+    const sleep = async (ms) => {
+      const endAt = Date.now() + ms;
+      while (!cancelRequested && Date.now() < endAt) {
+        await new Promise((r) => setTimeout(r, Math.min(250, Math.max(1, endAt - Date.now()))));
+      }
+    };
+    let modelCache = { key: '', list: null, active: null };
+
+    function makeError(message, extra) { return Object.assign(new Error(message), extra || {}); }
+
+    function modelVersionScore(name) {
+      const m = String(name).match(/gemini-(\d+)(?:\.(\d+))?/i);
+      return m ? parseInt(m[1], 10) * 1000 + parseInt(m[2] || '0', 10) : 0;
+    }
+
+    async function fetchWithTimeout(url, options, timeoutMs = 65000) {
+      const controller = new AbortController();
+      activeAbortController = controller;
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        try { controller.abort(); } catch {}
+      }, timeoutMs);
+      try {
+        return await fetch(url, { ...(options || {}), signal: controller.signal });
+      } catch (err) {
+        if (cancelRequested) throw makeError('ยกเลิกการถอดเนื้อเพลงแล้ว', { cancelled: true, fatal: true });
+        if (timedOut) throw makeError('หมดเวลารอการตอบกลับจากเซิร์ฟเวอร์ (Timeout)', { isTimeout: true });
+        throw err;
+      } finally {
+        clearTimeout(timer);
+        if (activeAbortController === controller) activeAbortController = null;
+      }
+    }
+
+    async function getModelCandidates(apiKey) {
+      if (modelCache.key !== apiKey) modelCache = { key: apiKey, list: null, active: null };
+      if (modelCache.list) return modelCache.list;
+      let discovered = [];
+      try {
+        const resp = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(apiKey)}`, {}, 15000);
+        if (resp.ok) {
+          const json = await resp.json();
+          discovered = (json.models || [])
+            .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+            .map((m) => String(m.name || '').replace(/^models\//, ''))
+            .filter((n) => /^gemini-\d+(\.\d+)?-(flash|pro)/i.test(n) && !/image|tts|live|embed|robotics|computer|native-audio|dialog|-exp|thinking/i.test(n))
+            .sort((a, b) => {
+              const dv = modelVersionScore(b) - modelVersionScore(a);
+              if (dv) return dv;
+              const wa = (/lite/i.test(a) ? 3 : 0) + (/pro/i.test(a) ? 1 : 0) + (/preview/i.test(a) ? 1 : 0);
+              const wb = (/lite/i.test(b) ? 3 : 0) + (/pro/i.test(b) ? 1 : 0) + (/preview/i.test(b) ? 1 : 0);
+              return wa - wb;
+            })
+            .slice(0, 6);
+        }
+      } catch {}
+      const list = [...discovered];
+      ['gemini-flash-latest'].concat(GEMINI_MODELS).forEach((m) => { if (!list.includes(m)) list.push(m); });
+      modelCache.list = list;
+      return list;
+    }
+
+    function parseRetryDelaySec(msg, errJson) {
+      const details = (errJson && errJson.error && errJson.error.details) || [];
+      for (const d of details) {
+        if (d && typeof d.retryDelay === 'string') {
+          const n = parseFloat(d.retryDelay);
+          if (!isNaN(n)) return n;
+        }
+      }
+      const m = String(msg).match(/retry in ([\d.]+)\s*s/i);
+      return m ? parseFloat(m[1]) : 0;
+    }
+
+    async function generateWithFallbackModels(apiKey, payload, onNotice) {
+      const base = await getModelCandidates(apiKey);
+      const queue = modelCache.active ? [modelCache.active].concat(base.filter((m) => m !== modelCache.active)) : base.slice();
+      const tried = new Set();
+      const failures = [];
+      let lastError = null;
+
+      while (queue.length) {
+        const model = queue.shift();
+        if (tried.has(model)) continue;
+        tried.add(model);
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (cancelRequested) throw makeError('ยกเลิกการถอดเนื้อเพลงแล้ว', { cancelled: true, fatal: true });
+
+          let resp;
+          try {
+            resp = await fetchWithTimeout(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              },
+              65000
+            );
+          } catch (netErr) {
+            if (netErr && netErr.fatal) throw netErr;
+            lastError = makeError((netErr && netErr.isTimeout) ? netErr.message : ('เชื่อมต่ออินเทอร์เน็ตไม่ได้ (' + ((netErr && netErr.message) || netErr) + ')'));
+            if (onNotice) onNotice(`${lastError.message} กำลังลองใหม่ (${attempt + 1}/3)...`);
+            await sleep(1500 * (attempt + 1));
+            continue;
+          }
+
+          if (resp.ok) {
+            modelCache.active = model;
+            return await resp.json();
+          }
+
+          const errJson = await resp.json().catch(() => ({}));
+          const msg = (errJson && errJson.error && errJson.error.message) || `HTTP ${resp.status}`;
+          const status = resp.status;
+          lastError = makeError(msg, { status });
+          failures.push(`${model}: ${String(msg).slice(0, 90)}`);
+
+          const sug = String(msg).match(/(?:use|switch to|migrate to)\s+models\/([\w.\-]+)/i);
+          if (sug) {
+            const suggested = sug[1].replace(/[.\-]+$/, '');
+            if (suggested && !tried.has(suggested)) {
+              const qi = queue.indexOf(suggested);
+              if (qi >= 0) queue.splice(qi, 1);
+              queue.unshift(suggested);
+            }
+          }
+
+          if (status === 400 && /api key|API_KEY_INVALID/i.test(msg)) {
+            throw makeError('API Key ไม่ถูกต้อง กรุณาตรวจสอบรหัสอีกครั้ง', { fatal: true });
+          }
+          if (status === 401 || status === 403) {
+            throw makeError('ถูกปฏิเสธสิทธิ์ใช้งาน: ' + String(msg).slice(0, 140), { fatal: true });
+          }
+
+          const modelGone = status === 404 ||
+            /no longer available|deprecated|not found|not supported|is not enabled|unsupported|response_?mime_?type|json mode|system_?instruction/i.test(msg);
+          if (modelGone) break;
+
+          if (status === 400) throw makeError(msg);
+
+          if (status === 429) {
+            if (/limit:\s*0|per\s*day|perday|daily/i.test(msg)) break;
+            const wait = Math.min(45, Math.max(4, parseRetryDelaySec(msg, errJson) + 1));
+            if (attempt < 2) {
+              if (onNotice) onNotice(`โควตาเต็มชั่วคราว รอ ${Math.ceil(wait)} วินาทีแล้วลองใหม่...`);
+              await sleep(wait * 1000);
+              continue;
+            }
+            break;
+          }
+
+          if (attempt < 2) {
+            if (onNotice) onNotice(`เซิร์ฟเวอร์หนาแน่น กำลังลองใหม่ (${attempt + 1}/3)...`);
+            await sleep(2000 * (attempt + 1));
+            continue;
+          }
+          break;
+        }
+
+        if (modelCache.active === model) modelCache.active = null;
+        if (queue.length && onNotice) onNotice(`สลับไปใช้โมเดลสำรอง (${queue[0]})...`);
+      }
+
+      throw makeError(failures.length ? 'ไม่มีโมเดลที่ตอบกลับได้ → ' + failures.join(' | ') : ((lastError && lastError.message) || 'เซิร์ฟเวอร์ AI ไม่ตอบกลับ กรุณาลองใหม่'));
+    }
+
+    async function testGeminiApiKey() {
+      const val = document.getElementById('geminiApiKeyInput').value.trim();
+      const resBox = document.getElementById('apiKeyTestResult');
+      resBox.classList.remove('hidden');
+      if (!val) {
+        resBox.textContent = '⚠️ กรุณากรอกรหัส API Key ก่อนทดสอบ';
+        resBox.className = 'mb-3 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/40';
+        return;
+      }
+      resBox.textContent = '⏳ กำลังทดสอบการเชื่อมต่อกับ Gemini AI...';
+      resBox.className = 'mb-3 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
+      try {
+        cancelRequested = false;
+        await generateWithFallbackModels(val, { contents: [{ parts: [{ text: 'Reply OK' }] }] }, (m) => { resBox.textContent = '⏳ ' + m; });
+        localStorage.setItem(API_KEY_STORAGE, val);
+        updateApiKeyIndicator();
+        resBox.textContent = '✅ เชื่อมต่อสำเร็จ! บันทึก API Key เรียบร้อย พร้อมถอดเนื้อเพลง 100%';
+        resBox.className = 'mb-3 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+      } catch (err) {
+        localStorage.setItem(API_KEY_STORAGE, val);
+        updateApiKeyIndicator();
+        resBox.textContent = `⚠️ บันทึก Key ให้แล้ว แต่เซิร์ฟเวอร์ตอบกลับ: ${err.message}`;
+        resBox.className = 'mb-3 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/40';
+      }
+    }
+
+    function initAudioEngine() {
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        return;
+      }
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        mediaSource = audioCtx.createMediaElementSource(audioEl);
+
+        eqFilters = EQ_FREQS.map((freq, idx) => {
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = idx === 0 ? 'lowshelf' : idx === EQ_FREQS.length - 1 ? 'highshelf' : 'peaking';
+          filter.frequency.value = freq;
+          filter.Q.value = 1.4;
+          filter.gain.value = eqMasterEnabled ? currentEqGains[idx] : 0;
+          return filter;
+        });
+
+        bassFilter = audioCtx.createBiquadFilter();
+        bassFilter.type = 'lowshelf';
+        bassFilter.frequency.value = 95;
+        bassFilter.gain.value = currentBassBoost;
+
+        convolverNode = audioCtx.createConvolver();
+        convolverNode.buffer = createHallImpulse(audioCtx, 1.8, 2.5);
+        dryGainNode = audioCtx.createGain();
+        wetGainNode = audioCtx.createGain();
+        dryGainNode.gain.value = 1;
+        wetGainNode.gain.value = currentEchoWet;
+
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 256;
+        analyserNode.smoothingTimeConstant = 0.82;
+
+        let prevNode = mediaSource;
+        eqFilters.forEach((f) => { prevNode.connect(f); prevNode = f; });
+        prevNode.connect(bassFilter);
+        bassFilter.connect(dryGainNode);
+        dryGainNode.connect(analyserNode);
+        bassFilter.connect(convolverNode);
+        convolverNode.connect(wetGainNode);
+        wetGainNode.connect(analyserNode);
+        analyserNode.connect(audioCtx.destination);
+      } catch {}
+    }
+
+    function createHallImpulse(ctx, duration, decay) {
+      const rate = ctx.sampleRate, length = rate * duration, impulse = ctx.createBuffer(2, length, rate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+      }
+      return impulse;
+    }
+
+    function applyEqGains() {
+      eqFilters.forEach((filter, idx) => { filter.gain.value = eqMasterEnabled ? currentEqGains[idx] : 0; });
+    }
+
+    function toggleEqMaster() {
+      eqMasterEnabled = !eqMasterEnabled;
+      applyEqGains();
+      updateEqUI();
+      showToast(eqMasterEnabled ? '🎛️ เปิดใช้งานอีควอไลเซอร์แล้ว' : '🎛️ ปิดอีควอไลเซอร์ (Bypass)');
+    }
+
+    function setEqBand(idx, val) {
+      currentEqGains[idx] = parseFloat(val);
+      currentPresetName = 'Custom';
+      applyEqGains();
+      updateEqUI();
+    }
+
+    function applyEqPreset(name) {
+      if (!EQ_PRESETS[name]) return;
+      currentPresetName = name;
+      currentEqGains = [...EQ_PRESETS[name]];
+      if (!eqMasterEnabled) eqMasterEnabled = true;
+      applyEqGains();
+      updateEqUI();
+    }
+
+    function setBassBoost(val) {
+      currentBassBoost = parseFloat(val);
+      if (bassFilter) bassFilter.gain.value = currentBassBoost;
+      document.getElementById('bassBoostLabel').textContent = `${currentBassBoost} dB`;
+      document.getElementById('modalBassLabel').textContent = `${currentBassBoost} dB`;
+      document.getElementById('bassBoostSlider').value = currentBassBoost;
+      document.getElementById('modalBassSlider').value = currentBassBoost;
+    }
+
+    function setEchoWet(val) {
+      currentEchoWet = parseFloat(val);
+      if (wetGainNode) wetGainNode.gain.value = currentEchoWet;
+      const pct = `${Math.round((currentEchoWet / 0.65) * 100)}%`;
+      document.getElementById('echoWetLabel').textContent = pct;
+      document.getElementById('modalEchoLabel').textContent = pct;
+      document.getElementById('echoWetSlider').value = currentEchoWet;
+      document.getElementById('modalEchoSlider').value = currentEchoWet;
+    }
+
+    function setPlaybackSpeed(val) {
+      const rate = parseFloat(val);
+      audioEl.playbackRate = rate;
+      document.getElementById('speedLabel').textContent = `${rate.toFixed(2)}x`;
+    }
+
+    function buildEqControls() {
+      ['sideEqBandsContainer', 'modalEqBandsContainer'].forEach((cid) => {
+        const el = document.getElementById(cid);
+        if (!el) return;
+        el.innerHTML = EQ_LABELS.map((lbl, idx) => `
+          <div class="eq-slider-wrap">
+            <span id="${cid}-val-${idx}" class="text-[9px] font-mono text-cyan-300">0</span>
+            <div class="eq-vertical-box">
+              <input id="${cid}-inp-${idx}" type="range" min="-12" max="12" step="1" value="0" oninput="setEqBand(${idx}, this.value)" class="eq-range" />
+            </div>
+            <span class="text-[9px] font-bold text-slate-400">${lbl}</span>
+          </div>
+        `).join('');
+      });
+
+      ['sideEqPresets', 'modalEqPresets'].forEach((pid) => {
+        const el = document.getElementById(pid);
+        if (!el) return;
+        el.innerHTML = Object.keys(EQ_PRESETS).map((name) => `
+          <button type="button" data-preset="${name}" onclick="applyEqPreset('${name}')"
+            class="preset-btn py-1 px-1 rounded-lg text-[10px] font-bold border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:border-cyan-400 transition">
+            ${name}
+          </button>
+        `).join('');
+      });
+      updateEqUI();
+    }
+
+    function updateEqUI() {
+      const badge = document.getElementById('headerEqStatusBadge');
+      if (badge) {
+        badge.textContent = eqMasterEnabled ? 'ON' : 'OFF';
+        badge.className = eqMasterEnabled
+          ? 'px-1 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-300'
+          : 'px-1 rounded text-[9px] font-extrabold bg-slate-700 text-slate-400';
+      }
+      ['sideEqToggleBtn', 'modalEqToggleBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.textContent = eqMasterEnabled ? '● เปิด EQ' : '○ ปิด EQ';
+        btn.className = eqMasterEnabled
+          ? 'px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+          : 'px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-400 border border-slate-700';
+      });
+      ['sideEqBandsContainer', 'modalEqBandsContainer'].forEach((cid) => {
+        EQ_LABELS.forEach((_, idx) => {
+          const inp = document.getElementById(`${cid}-inp-${idx}`);
+          const valEl = document.getElementById(`${cid}-val-${idx}`);
+          const g = currentEqGains[idx];
+          if (inp) inp.value = g;
+          if (valEl) valEl.textContent = g > 0 ? `+${g}` : `${g}`;
+        });
+      });
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        const active = btn.dataset.preset === currentPresetName;
+        btn.className = active
+          ? 'preset-btn py-1 px-1 rounded-lg text-[10px] font-extrabold border border-cyan-400 bg-cyan-500/20 text-cyan-300 transition'
+          : 'preset-btn py-1 px-1 rounded-lg text-[10px] font-bold border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:border-cyan-400 transition';
+      });
+    }
+
+    async function handleFileSelection(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      await ingestFiles(files);
+      event.target.value = '';
+    }
+
+    async function ingestFiles(files) {
+      const audioFiles = [], lrcFiles = [];
+      files.forEach((f) => {
+        const lower = f.name.toLowerCase();
+        if (lower.endsWith('.lrc') || lower.endsWith('.txt')) lrcFiles.push(f);
+        else if (f.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|flac|aac|webm)$/i.test(lower)) audioFiles.push(f);
+      });
+
+      const lrcMap = new Map();
+      for (const lf of lrcFiles) {
+        const baseName = lf.name.replace(/\.[^.]+$/, '').toLowerCase().trim();
+        const parsed = parseLrcText(await lf.text());
+        if (parsed.length) lrcMap.set(baseName, parsed);
+      }
+
+      let firstNewIdx = -1;
+      for (const af of audioFiles) {
+        const cleanTitle = af.name.replace(/\.[^.]+$/, '').trim();
+        const newTrack = {
+          id: 'trk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          title: cleanTitle,
+          artist: 'ไฟล์เพลงในเครื่อง',
+          duration: 0,
+          blob: af,
+          url: URL.createObjectURL(af),
+          lyrics: lrcMap.get(cleanTitle.toLowerCase()) || []
+        };
+        tracks.push(newTrack);
+        if (firstNewIdx === -1) firstNewIdx = tracks.length - 1;
+        await saveTrackToDB(newTrack);
+      }
+
+      if (!audioFiles.length && lrcFiles.length && currentTrackIndex >= 0) {
+        const firstLrc = Array.from(lrcMap.values())[0];
+        if (firstLrc && firstLrc.length) {
+          tracks[currentTrackIndex].lyrics = firstLrc;
+          await saveTrackToDB(tracks[currentTrackIndex]);
+          renderLyrics();
+          showToast('📄 นำเข้าไฟล์เนื้อเพลง .LRC สำเร็จ!');
+        }
+      }
+
+      renderTrackLists();
+      if (firstNewIdx >= 0) {
+        selectAndPlayTrack(firstNewIdx);
+        showToast(`🎵 เพิ่มเพลง "${tracks[firstNewIdx].title}" เข้าคลังแล้ว`);
+      } else if (!audioFiles.length && !lrcFiles.length) {
+        showToast('⚠️ กรุณาเลือกไฟล์เสียง MP3, WAV, M4A หรือ .LRC');
+      }
+    }
+
+    function renderTrackLists() {
+      const query = (document.getElementById('sidebarSearchInput')?.value || '').toLowerCase().trim();
+      const filtered = tracks.map((t, idx) => ({ t, idx })).filter(({ t }) => !query || t.title.toLowerCase().includes(query));
+      document.getElementById('headerTrackCount').textContent = tracks.length;
+      document.getElementById('sidebarTrackCount').textContent = `${tracks.length} เพลง`;
+
+      const renderHTML = (list) => {
+        if (!list.length) return `<div class="text-center py-8 text-xs text-slate-500">ยังไม่มีเพลงในคลัง<br/>กด "+ เพิ่มเพลง MP3" เพื่อเริ่มต้น</div>`;
+        return list.map(({ t, idx }) => {
+          const active = idx === currentTrackIndex;
+          const hasLyrics = t.lyrics && t.lyrics.length > 0;
+          const isWorking = t.id === transcribingTrackId;
+          const isQueued = queuedTrackIds.has(t.id);
+          return `
+            <div onclick="selectAndPlayTrack(${idx})"
+              class="flex items-center justify-between gap-2 p-2 rounded-xl cursor-pointer border transition ${
+                active ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-400/50 text-white' : 'bg-slate-900/65 hover:bg-slate-800/80 border-slate-800/80 text-slate-300'
+              }">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold shrink-0 ${active ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'}">
+                  ${active && isPlaying ? '▶' : idx + 1}
+                </span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold truncate">${escapeHtml(t.title)}</div>
+                  <div class="text-[10px] ${isWorking ? 'text-amber-300 font-bold' : isQueued ? 'text-violet-300' : hasLyrics ? 'text-emerald-400' : 'text-slate-500'}">
+                    ${isWorking ? '⏳ กำลังถอดเนื้อเพลง...' : isQueued ? '🕒 รอคิวถอดเนื้อเพลง' : hasLyrics ? `🎤 มีเนื้อเพลง (${t.lyrics.length} บรรทัด)` : 'ยังไม่มีเนื้อเพลง'}
+                  </div>
+                </div>
+              </div>
+              <button type="button" onclick="removeTrack(event, ${idx})" class="text-rose-400 hover:text-rose-300 text-xs px-1.5 py-1 rounded">✕</button>
+            </div>
+          `;
+        }).join('');
+      };
+
+      const sideEl = document.getElementById('sidebarTrackList');
+      const modalEl = document.getElementById('modalTrackList');
+      if (sideEl) sideEl.innerHTML = renderHTML(filtered);
+      if (modalEl) modalEl.innerHTML = renderHTML(tracks.map((t, idx) => ({ t, idx })));
+    }
+
+    function selectAndPlayTrack(idx) {
+      if (idx < 0 || idx >= tracks.length) return;
+      currentTrackIndex = idx;
+      const track = tracks[idx];
+      initAudioEngine();
+      audioEl.src = track.url;
+      audioEl.load();
+
+      document.getElementById('nowPlayingTitle').textContent = track.title;
+      document.getElementById('nowPlayingSubtitle').textContent =
+        track.lyrics && track.lyrics.length ? `🎤 ซิงค์เนื้อเพลงแล้ว ${track.lyrics.length} บรรทัด` : 'กดปุ่ม "✨ ถอดเนื้อ 100%" เพื่อสร้างเนื้อร้องอัตโนมัติ';
+      document.getElementById('fullViewSongTitle').textContent = `🎤 ${track.title}`;
+
+      renderLyrics();
+      renderTrackLists();
+      audioEl.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => { isPlaying = false; updatePlayPauseUI(); });
+    }
+
+    function togglePlayPause() {
+      if (currentTrackIndex < 0) return tracks.length ? selectAndPlayTrack(0) : showToast('กรุณาเพิ่มไฟล์เพลง MP3 ก่อนกดเล่น');
+      initAudioEngine();
+      if (audioEl.paused) {
+        audioEl.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch((e) => showToast('เล่นไม่ได้: ' + e.message));
+      } else {
+        audioEl.pause(); isPlaying = false; updatePlayPauseUI();
+      }
+    }
+
+    function updatePlayPauseUI() {
+      const icon = isPlaying ? '⏸' : '▶';
+      document.getElementById('playPauseBtn').textContent = icon;
+      document.getElementById('fullPlayPauseBtn').textContent = icon;
+      renderTrackLists();
+    }
+
+    function playPrevTrack() { if (tracks.length) selectAndPlayTrack((currentTrackIndex - 1 + tracks.length) % tracks.length); }
+    function playNextTrack() {
+      if (!tracks.length) return;
+      selectAndPlayTrack(isShuffle ? Math.floor(Math.random() * tracks.length) : (currentTrackIndex + 1) % tracks.length);
+    }
+
+    function toggleShuffle() {
+      isShuffle = !isShuffle;
+      document.getElementById('shuffleBtn').className = isShuffle
+        ? 'w-7 h-7 rounded-lg bg-cyan-500/25 text-cyan-300 flex items-center justify-center text-xs border border-cyan-400'
+        : 'w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 flex items-center justify-center text-xs border border-slate-700/70';
+      showToast(isShuffle ? '🔀 เปิดสุ่มเพลง' : '🔀 ปิดสุ่มเพลง');
+    }
+
+    function toggleLoop() {
+      isLoop = !isLoop;
+      audioEl.loop = isLoop;
+      document.getElementById('loopBtn').className = isLoop
+        ? 'w-7 h-7 rounded-lg bg-pink-500/25 text-pink-300 flex items-center justify-center text-xs border border-pink-400'
+        : 'w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 flex items-center justify-center text-xs border border-slate-700/70';
+      showToast(isLoop ? '🔁 เล่นซ้ำเพลงนี้' : '🔁 ปิดเล่นซ้ำ');
+    }
+
+    function handleSeekInput(val) {
+      if (audioEl.duration && !isNaN(audioEl.duration)) audioEl.currentTime = (parseFloat(val) / 1000) * audioEl.duration;
+    }
+    function setVolume(val) {
+      audioEl.volume = parseFloat(val);
+      document.getElementById('muteBtn').textContent = audioEl.volume === 0 ? '🔇' : '🔊';
+    }
+    function toggleMute() {
+      audioEl.muted = !audioEl.muted;
+      document.getElementById('muteBtn').textContent = audioEl.muted ? '🔇' : '🔊';
+    }
+
+    async function removeTrack(e, idx) {
+      e.stopPropagation();
+      const target = tracks[idx];
+      if (!target) return;
+      if (target.url) URL.revokeObjectURL(target.url);
+      await deleteTrackFromDB(target.id);
+      tracks.splice(idx, 1);
+      if (idx === currentTrackIndex) {
+        audioEl.pause(); audioEl.src = ''; isPlaying = false;
+        currentTrackIndex = tracks.length ? 0 : -1;
+        updatePlayPauseUI();
+        if (currentTrackIndex >= 0) selectAndPlayTrack(0);
+        else { document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง'; renderLyrics(); }
+      } else if (idx < currentTrackIndex) currentTrackIndex--;
+      renderTrackLists();
+    }
+
+    async function clearAllTracks() {
+      tracks.forEach((t) => t.url && URL.revokeObjectURL(t.url));
+      tracks = []; currentTrackIndex = -1; audioEl.pause(); audioEl.src = ''; isPlaying = false; updatePlayPauseUI();
+      try { (await openDB()).transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).clear(); } catch {}
+      document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง';
+      renderTrackLists(); renderLyrics();
+      showToast('🗑️ ล้างคลังเพลงทั้งหมดเรียบร้อย');
+    }
+
+    // ---------- Continuous High-Accuracy Transcription (24kHz HD + Context + Proofread) ----------
+    let transcribingTrackId = null;
+    let queuedTrackIds = new Set();
+    let transcribeHeaderText = '';
+    let transcribeHeaderTitle = '';
+    let wakeLock = null;
+    let keepAliveTimer = null;
+    let progressHideTimer = null;
+
+    async function acquireWakeLock() {
+      try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = setInterval(() => {
+        if (!isTranscribing) return;
+        try { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {}); } catch {}
+      }, 8000);
+    }
+    function releaseWakeLock() {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+      try { if (wakeLock) wakeLock.release(); } catch {}
+      wakeLock = null;
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isTranscribing) acquireWakeLock();
+    });
+
+    function transcribeEls() {
+      return {
+        box: document.getElementById('transcribeProgressBox'),
+        status: document.getElementById('transcribeStatusText'),
+        pct: document.getElementById('transcribePercentText'),
+        bar: document.getElementById('transcribeProgressBar'),
+        name: document.getElementById('transcribeTrackName'),
+        badge: document.getElementById('transcribeQueueBadge'),
+        stopBtn: document.getElementById('transcribeStopBtn'),
+        fullBanner: document.getElementById('fullTranscribeBanner')
+      };
+    }
+
+    function setTranscribeHeader(title, idx, total) {
+      const e = transcribeEls();
+      transcribeHeaderTitle = title;
+      transcribeHeaderText = `⏳ กำลังถอดเนื้อเพลง: ${title}${total > 1 ? ` (เพลงที่ ${idx}/${total})` : ''}`;
+      e.name.textContent = title;
+      e.badge.textContent = `เพลงที่ ${idx}/${total}`;
+      e.badge.classList.toggle('hidden', total <= 1);
+      e.fullBanner.textContent = transcribeHeaderText;
+      e.fullBanner.classList.remove('hidden');
+      const cur = tracks[currentTrackIndex];
+      if (cur && cur.title === title) document.getElementById('nowPlayingSubtitle').textContent = '⏳ กำลังถอดเนื้อเพลง 24kHz HD...';
+    }
+
+    function setTranscribeProgress(pct, msg, isError) {
+      const e = transcribeEls();
+      e.pct.textContent = isError ? '—' : `${Math.round(pct)}%`;
+      e.bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+      e.status.textContent = msg;
+      e.status.className = 'block mt-0.5 text-[11px] font-semibold break-words leading-snug ' + (isError ? 'text-rose-300' : 'text-cyan-300');
+      if (!isError) e.fullBanner.textContent = `${transcribeHeaderText} • ${Math.round(pct)}%`;
+    }
+
+    function parseJsonLoose(text) {
+      const t = String(text).replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      try { return JSON.parse(t); } catch {}
+      const a = t.indexOf('{'), b = t.lastIndexOf('}');
+      if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+      const a2 = t.indexOf('['), b2 = t.lastIndexOf(']');
+      if (a2 >= 0 && b2 > a2) { try { return JSON.parse(t.slice(a2, b2 + 1)); } catch {} }
+      throw makeError('อ่านผลลัพธ์จาก AI ไม่ได้', { isParse: true });
+    }
+
+    function normalizeChunkLines(arr, offset, clipLen) {
+      const out = [];
+      (Array.isArray(arr) ? arr : []).forEach((line) => {
+        const text = String((line && line.text) == null ? '' : line.text).replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        const ls = Math.min(clipLen, Math.max(0, Number(line.start) || 0));
+        const le = Math.max(ls + 0.35, Math.min(clipLen, Number(line.end) || ls + 3));
+        const words = (Array.isArray(line.words) ? line.words : [])
+          .filter((w) => w && w.w != null && String(w.w).length)
+          .map((w) => {
+            const ws = Math.min(clipLen, Math.max(0, Number(w.s) || ls));
+            const we = Math.max(ws + 0.04, Number(w.e) || ws + 0.25);
+            return { w: String(w.w), s: +(offset + ws).toFixed(2), e: +(offset + we).toFixed(2) };
+          });
+        out.push({ start: +(offset + ls).toFixed(2), end: +(offset + le).toFixed(2), text, words });
+      });
+      return out;
+    }
+
+    function mergeTranscribedLines(lines) {
+      const norm = (t) => String(t).replace(/[\s.,!?'"“”‘’…\-–—]/g, '').toLowerCase();
+      const sorted = lines.filter((l) => l && l.text).map((l) => ({ ...l })).sort((a, b) => a.start - b.start);
+      const out = [];
+      for (const line of sorted) {
+        const prev = out[out.length - 1];
+        if (prev && norm(prev.text) === norm(line.text) && Math.abs(prev.start - line.start) < 5) continue;
+        if (prev && prev.end > line.start) prev.end = Math.max(prev.start + 0.25, line.start - 0.04);
+        out.push(line);
+      }
+      return out;
+    }
+
+    async function transcribeChunk(userKey, slice, start, end, rate, contextInfo, onNotice) {
+      const clipLen = end - start;
+      const wavBase64 = encodePcmToWavBase64(slice, rate);
+      const prevContext = contextInfo.prevLines && contextInfo.prevLines.length
+        ? `\nบริบทเนื้อเพลง 2 บรรทัดก่อนหน้า (เพื่อความต่อเนื่องของคำและสำเนียง):\n- ${contextInfo.prevLines.join('\n- ')}\n`
+        : '';
+      const prompt = `ถอดเนื้อร้องจากคลิปเสียงความยาว ${clipLen.toFixed(1)} วินาทีนี้ (ชื่อเพลง: "${contextInfo.title}") ให้ละเอียดและถูกต้องตามเสียงร้องจริง 100%${prevContext}
+ส่งคืนเฉพาะ JSON ตามรูปแบบนี้เท่านั้น:
+{"lines":[{"start":0.5,"end":3.8,"text":"เนื้อร้องเต็มบรรทัดตรงตามเสียงร้อง","words":[{"w":"คำที่1","s":0.5,"e":1.2},{"w":"คำที่2","s":1.2,"e":2.5}]}]}
+ข้อกำหนดสำคัญ:
+- แกะทุกคำร้องและคำสร้อยที่นักร้องร้องออกมาตั้งแต่ต้นจนจบคลิป ห้ามข้ามหรือย่อความ
+- คงสำเนียงภาษาถิ่นเดิมไว้ 100% (เช่น ภาษาอีสาน: ฮัก, บ่, อ้าย, น้อง, เฮ็ด, คึดฮอด, เด้อ, แม่น)
+- เวลา start, end, s, e เป็นวินาทีนับจากจุดเริ่มต้นของคลิปนี้ (0.0 ถึง ${clipLen.toFixed(1)})
+- หากช่วงนี้มีแต่เสียงดนตรีไม่มีเสียงร้อง ให้ส่ง {"lines":[]}`;
+
+      let lastErr = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (cancelRequested) throw makeError('ยกเลิกการถอดเนื้อเพลงแล้ว', { cancelled: true, fatal: true });
+        try {
+          const data = await generateWithFallbackModels(
+            userKey,
+            {
+              systemInstruction: { parts: [{ text: TRANSCRIPTION_SYSTEM_INSTRUCTION }] },
+              contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'audio/wav', data: wavBase64 } }] }],
+              generationConfig: { temperature: 0.05, topP: 0.85, responseMimeType: 'application/json', maxOutputTokens: 8192 }
+            },
+            onNotice
+          );
+          const cand = data && data.candidates && data.candidates[0];
+          const rawText = ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || '').join('').trim();
+          if (!rawText) {
+            if (cand && cand.finishReason === 'STOP') return [];
+            lastErr = makeError(cand && cand.finishReason ? `AI ไม่ตอบกลับ (${cand.finishReason})` : 'AI ไม่ตอบกลับ');
+            if (onNotice) onNotice(`AI ไม่ตอบกลับ ลองใหม่ (${attempt + 1}/3)...`);
+            await sleep(1000);
+            continue;
+          }
+          const parsed = parseJsonLoose(rawText);
+          return normalizeChunkLines(Array.isArray(parsed) ? parsed : parsed.lines, start, clipLen);
+        } catch (err) {
+          if (err.fatal) throw err;
+          lastErr = err;
+          if (err.isParse) {
+            if (onNotice) onNotice(`อ่านผลลัพธ์ไม่ได้ ลองใหม่ (${attempt + 1}/3)...`);
+            await sleep(800);
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw lastErr || makeError('ถอดเนื้อเพลงช่วงนี้ไม่สำเร็จ');
+    }
+
+    async function proofreadLyricsWithAI(userKey, title, lines, onNotice) {
+      if (!lines || !lines.length) return lines;
+      const indexedInput = lines.map((l, idx) => ({ i: idx, t: l.text }));
+      const prompt = `ตรวจสอบและแก้ไขคำสะกดเนื้อเพลง "${title}" ต่อไปนี้ให้ถูกต้อง 100% ตามหลักภาษาและการออกเสียงร้องจริง (รองรับภาษาไทย, อีสาน, ลาว, อังกฤษ)
+กฎการตรวจแก้:
+1. แก้เฉพาะคำที่ AI ถอดเสียงเพี้ยนหรือสะกดผิด (เช่น คำพ้องเสียง, วรรณยุกต์เพี้ยน, สระผิด) ให้เป็นคำที่มีความหมายตรงกับบริบทเพลง
+2. ห้ามเปลี่ยนสำเนียงท้องถิ่นเป็นภาษากลางเด็ดขาด (คงคำว่า ฮัก, บ่, อ้าย, น้อง, เฮ็ด, คึดฮอด, เด้อ, สิ, แม่น ไว้ตามเดิม)
+3. รักษาจำนวนบรรทัดและหมายเลข index "i" ให้ครบทุกบรรทัดเหมือนเดิม 100%
+
+ข้อมูลเนื้อเพลง:
+${JSON.stringify(indexedInput)}
+
+ส่งคืนเฉพาะ JSON รูปแบบ: {"fixed":[{"i":0,"t":"บรรทัดที่ตรวจแก้แล้ว"}]}`;
+
+      const data = await generateWithFallbackModels(
+        userKey,
+        {
+          systemInstruction: { parts: [{ text: TRANSCRIPTION_SYSTEM_INSTRUCTION }] },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.05, responseMimeType: 'application/json', maxOutputTokens: 8192 }
+        },
+        onNotice
+      );
+      const cand = data && data.candidates && data.candidates[0];
+      const rawText = ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || '').join('').trim();
+      if (!rawText) return lines;
+      const parsed = parseJsonLoose(rawText);
+      const fixedArr = Array.isArray(parsed) ? parsed : (parsed.fixed || parsed.lines || []);
+      const map = new Map();
+      fixedArr.forEach((item) => {
+        if (item && typeof item.i === 'number' && item.t && String(item.t).trim()) {
+          map.set(item.i, String(item.t).replace(/\s+/g, ' ').trim());
+        }
+      });
+      return lines.map((line, idx) => {
+        const newText = map.get(idx);
+        if (!newText || newText === line.text) return line;
+        return { ...line, text: newText, words: [] };
+      });
+    }
+
+    async function transcribeSingleTrack(track, userKey) {
+      if (!track.blob) throw makeError('ไม่พบไฟล์เสียงของเพลงนี้');
+      setTranscribeProgress(2, 'กำลังอ่านไฟล์เสียงความละเอียดสูง...');
+
+      const targetRate = 24000;
+      let channelData, totalDuration;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const decodeCtx = new AC();
+      try {
+        const decoded = await decodeCtx.decodeAudioData(await track.blob.arrayBuffer());
+        totalDuration = decoded.duration;
+        setTranscribeProgress(7, 'กำลังแปลงเสียงเป็น 24kHz HD Mono...');
+        const offlineCtx = new OfflineAudioContext(1, Math.ceil(totalDuration * targetRate), targetRate);
+        const src = offlineCtx.createBufferSource();
+        src.buffer = decoded;
+        src.connect(offlineCtx.destination);
+        src.start(0);
+        channelData = (await offlineCtx.startRendering()).getChannelData(0);
+      } catch (e) {
+        throw makeError('แปลงไฟล์เสียงไม่ได้: ' + ((e && e.message) || e));
+      } finally {
+        try { Promise.resolve(decodeCtx.close()).catch(() => {}); } catch {}
+      }
+
+      const chunkSec = 45, overlapSec = 4, stepSec = chunkSec - overlapSec, chunks = [];
+      for (let st = 0; st < totalDuration; st += stepSec) {
+        const en = Math.min(totalDuration, st + chunkSec);
+        chunks.push({ start: st, end: en });
+        if (en >= totalDuration) break;
+      }
+
+      const allLines = [];
+      const failed = [];
+      let fatalErr = null, lastErrMsg = '';
+
+      const getRecentContext = () => {
+        const currentMerged = mergeTranscribedLines(allLines);
+        return {
+          title: track.title,
+          prevLines: currentMerged.slice(-2).map((l) => l.text)
+        };
+      };
+
+      const commitLiveProgress = async () => {
+        if (!allLines.length) return;
+        track.lyrics = mergeTranscribedLines(allLines);
+        if (tracks[currentTrackIndex] === track) renderLyrics();
+        await saveTrackToDB(track);
+      };
+
+      const runSlice = async (st, en, basePct, label) => {
+        setTranscribeProgress(basePct, `กำลังถอด${label} (24kHz HD)...`);
+        const slice = channelData.slice(Math.floor(st * targetRate), Math.floor(en * targetRate));
+        const lines = await transcribeChunk(
+          userKey, slice, st, en, targetRate, getRecentContext(),
+          (m) => setTranscribeProgress(basePct, `${label}: ${m}`)
+        );
+        allLines.push(...lines);
+        await commitLiveProgress();
+      };
+
+      for (let i = 0; i < chunks.length; i++) {
+        if (cancelRequested || !tracks.includes(track)) break;
+        const { start, end } = chunks[i];
+        const basePct = 10 + (i / chunks.length) * 80;
+        const label = `ช่วงที่ ${i + 1}/${chunks.length} (${formatTime(start)} - ${formatTime(end)})`;
+        try {
+          await runSlice(start, end, basePct, label);
+        } catch (err) {
+          if (err.fatal) { fatalErr = err; break; }
+          failed.push(i);
+          lastErrMsg = err.message;
+          setTranscribeProgress(basePct, `⚠️ ${label} ติดขัดชั่วคราว — เดินหน้าถอดช่วงถัดไปต่อ...`);
+          await sleep(1000);
+        }
+      }
+
+      if (!fatalErr && !cancelRequested && failed.length) {
+        const stillFailed = [];
+        for (const i of failed) {
+          if (cancelRequested || !tracks.includes(track)) break;
+          const { start, end } = chunks[i];
+          const mid = +((start + end) / 2).toFixed(2);
+          try {
+            await runSlice(start, Math.min(end, mid + 1.5), 91, `เก็บตกช่วงที่ ${i + 1} (ครึ่งแรก)`);
+            await runSlice(Math.max(start, mid - 1.5), end, 93, `เก็บตกช่วงที่ ${i + 1} (ครึ่งหลัง)`);
+          } catch (err) {
+            if (err.fatal) { fatalErr = err; break; }
+            stillFailed.push(i);
+            lastErrMsg = err.message;
+          }
+        }
+        failed.length = 0;
+        failed.push(...stillFailed);
+      }
+
+      if (!tracks.includes(track)) return { status: 'cancelled', count: 0, failed };
+
+      let merged = mergeTranscribedLines(allLines);
+
+      if (!fatalErr && !cancelRequested && merged.length) {
+        try {
+          setTranscribeProgress(96, '🔍 กำลังตรวจทานและเกลาคำสะกดให้ถูกต้อง 100%...');
+          merged = await proofreadLyricsWithAI(
+            userKey, track.title, merged,
+            (m) => setTranscribeProgress(96, `ตรวจแก้คำสะกด: ${m}`)
+          );
+        } catch {}
+      }
+
+      if (merged.length) {
+        track.lyrics = merged;
+        await saveTrackToDB(track);
+        if (tracks[currentTrackIndex] === track) {
+          renderLyrics();
+          document.getElementById('nowPlayingSubtitle').textContent = `🎤 ถอดเนื้อเพลง 100% แล้ว ${merged.length} บรรทัด`;
+        }
+        renderTrackLists();
+      }
+
+      if (fatalErr && !fatalErr.cancelled) {
+        if (merged.length) fatalErr.message += ' (บันทึกเนื้อเพลงที่ถอดได้บางส่วนแล้ว)';
+        throw fatalErr;
+      }
+      if (cancelRequested || fatalErr) return { status: 'cancelled', count: merged.length, failed };
+      if (!merged.length) throw makeError(failed.length ? (lastErrMsg || 'ถอดเนื้อเพลงไม่สำเร็จ') : 'ไม่พบเสียงร้องในไฟล์เพลงนี้');
+
+      const incomplete = failed.length > 0;
+      setTranscribeProgress(100, incomplete
+        ? `⚠️ ถอดได้ ${merged.length} บรรทัด (ข้ามช่วงที่ ${failed.map((i) => i + 1).join(', ')})`
+        : `✅ ถอดเนื้อเพลงละเอียดครบ ${merged.length} บรรทัด (ตรวจคำสะกดแล้ว)`);
+      return { status: incomplete ? 'partial' : 'ok', count: merged.length, failed };
+    }
+
+    async function runTranscribeQueue(list) {
+      const userKey = getSavedApiKey();
+      if (!userKey) {
+        openApiKeyModal();
+        return showToast('🔑 กรุณาใส่ Gemini API Key ก่อนถอดเนื้อเพลง');
+      }
+      isTranscribing = true;
+      cancelRequested = false;
+      queuedTrackIds = new Set(list.map((t) => t.id));
+      clearTimeout(progressHideTimer);
+      const e = transcribeEls();
+      e.box.classList.remove('hidden');
+      e.stopBtn.classList.remove('hidden');
+      await acquireWakeLock();
+      renderTrackLists();
+
+      const summary = { ok: 0, partial: 0, failed: 0 };
+      let hadError = false;
+      try {
+        for (let i = 0; i < list.length; i++) {
+          const track = list[i];
+          if (cancelRequested) break;
+          queuedTrackIds.delete(track.id);
+          if (!tracks.includes(track)) continue;
+          transcribingTrackId = track.id;
+          setTranscribeHeader(track.title, i + 1, list.length);
+          setTranscribeProgress(0, 'กำลังเริ่มต้น...');
+          renderTrackLists();
+          try {
+            const r = await transcribeSingleTrack(track, userKey);
+            if (r.status === 'cancelled') break;
+            if (r.status === 'ok') {
+              summary.ok++;
+              showToast(`✨ ถอดเนื้อเพลง "${track.title}" สำเร็จ (${r.count} บรรทัด)`);
+            } else {
+              summary.partial++;
+              showToast(`⚠️ "${track.title}" ถอดได้บางส่วน (${r.count} บรรทัด) กดถอดใหม่เพื่อลองอีกครั้ง`);
+            }
+          } catch (err) {
+            hadError = true;
+            summary.failed++;
+            setTranscribeProgress(0, `❌ "${track.title}": ${err.message}`, true);
+            showToast(`❌ ถอดเนื้อเพลง "${track.title}" ไม่สำเร็จ`);
+            if (err.fatal) break;
+            await sleep(2500);
+          }
+        }
+      } finally {
+        isTranscribing = false;
+        transcribingTrackId = null;
+        queuedTrackIds.clear();
+        releaseWakeLock();
+        renderTrackLists();
+        e.stopBtn.classList.add('hidden');
+        e.fullBanner.classList.add('hidden');
+        progressHideTimer = setTimeout(() => { if (!isTranscribing) e.box.classList.add('hidden'); }, hadError ? 15000 : 4500);
+      }
+
+      if (cancelRequested) showToast('⏹ หยุดการถอดเนื้อเพลงแล้ว (เก็บเนื้อเพลงที่ถอดได้ไว้ให้แล้ว)');
+      else if (list.length > 1) {
+        showToast(`✅ ถอดเสร็จ ${summary.ok} เพลง` + (summary.partial ? `, บางส่วน ${summary.partial}` : '') + (summary.failed ? `, ไม่สำเร็จ ${summary.failed}` : ''));
+      }
+    }
+
+    function cancelTranscription() {
+      if (!isTranscribing) return;
+      cancelRequested = true;
+      try { if (activeAbortController) activeAbortController.abort(); } catch {}
+      transcribeEls().status.textContent = '⏹ กำลังหยุดทันที... (บันทึกเนื้อเพลงที่ถอดได้แล้วไว้ให้)';
+    }
+
+    async function transcribeCurrentTrack100() {
+      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มและเลือกเพลง MP3 ก่อนกดถอดเนื้อเพลง');
+      if (isTranscribing) return showToast(`กำลังถอดเนื้อเพลง "${transcribeHeaderTitle}" อยู่ — กด ⏹ หยุด ก่อนหากต้องการเปลี่ยนเพลง`);
+      const track = tracks[currentTrackIndex];
+      if (!track) return;
+      if (track.lyrics && track.lyrics.length && !confirm(`เพลง "${track.title}" มีเนื้อเพลงอยู่แล้ว ต้องการถอดใหม่และแทนที่ใช่ไหม?`)) return;
+      await runTranscribeQueue([track]);
+    }
+
+    async function transcribeAllTracks() {
+      if (!tracks.length) return showToast('ยังไม่มีเพลงในคลัง');
+      if (isTranscribing) return showToast(`กำลังถอดเนื้อเพลง "${transcribeHeaderTitle}" อยู่`);
+      const pending = tracks.filter((t) => !(t.lyrics && t.lyrics.length));
+      if (!pending.length) return showToast('ทุกเพลงในคลังมีเนื้อเพลงแล้ว');
+      closeModal('libraryModal');
+      await runTranscribeQueue(pending);
+    }
+
+    async function proofreadCurrentTrackLyrics() {
+      if (currentTrackIndex < 0 || !tracks[currentTrackIndex].lyrics?.length) {
+        return showToast('ยังไม่มีเนื้อเพลงให้ตรวจแก้คำสะกด');
+      }
+      if (isTranscribing) return showToast('กรุณารอให้การถอดเนื้อเพลงปัจจุบันเสร็จสิ้นก่อน');
+      const userKey = getSavedApiKey();
+      if (!userKey) { openApiKeyModal(); return showToast('🔑 กรุณาใส่ Gemini API Key ก่อน'); }
+
+      const track = tracks[currentTrackIndex];
+      showToast('🔍 AI กำลังตรวจแก้คำสะกดให้ถูกต้อง 100%...');
+      try {
+        cancelRequested = false;
+        const fixed = await proofreadLyricsWithAI(userKey, track.title, track.lyrics);
+        track.lyrics = fixed;
+        await saveTrackToDB(track);
+        renderLyrics();
+        renderTrackLists();
+        showToast('✅ ตรวจแก้คำสะกดเนื้อเพลงเรียบร้อย 100%!');
+      } catch (err) {
+        showToast('❌ ตรวจแก้คำสะกดไม่สำเร็จ: ' + err.message);
+      }
+    }
+
+    async function proofreadEditorTextarea() {
+      const ta = document.getElementById('lyricEditorTextarea');
+      const rawLines = ta.value.split('\n').filter((l) => l.trim());
+      if (!rawLines.length) return showToast('ไม่มีข้อความในกล่องแก้ไข');
+      const userKey = getSavedApiKey();
+      if (!userKey) { openApiKeyModal(); return showToast('🔑 กรุณาใส่ Gemini API Key ก่อน'); }
+
+      const title = currentTrackIndex >= 0 ? tracks[currentTrackIndex].title : 'เพลง';
+      const parsedObjs = rawLines.map((line) => {
+        const m = line.match(/^(\[\d{1,2}:\d{2}(?:\.\d{1,3})?\])\s*(.*)$/);
+        return m ? { tag: m[1] + ' ', text: m[2] } : { tag: '', text: line };
+      });
+      showToast('🔍 กำลังเกลาคำสะกดในกล่องแก้ไข...');
+      try {
+        cancelRequested = false;
+        const fixed = await proofreadLyricsWithAI(userKey, title, parsedObjs.map((o) => ({ text: o.text })));
+        ta.value = parsedObjs.map((o, idx) => o.tag + (fixed[idx]?.text || o.text)).join('\n');
+        showToast('✅ เกลาคำสะกดเรียบร้อย กดบันทึกได้เลย!');
+      } catch (err) {
+        showToast('❌ เกลาคำสะกดไม่สำเร็จ: ' + err.message);
+      }
+    }
+
+    function encodePcmToWavBase64(samples, sampleRate) {
+      const n = samples.length, buffer = new ArrayBuffer(44 + n * 2), view = new DataView(buffer);
+      const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+      ws(0, 'RIFF'); view.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+      view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true); view.setUint16(34, 16, true); ws(36, 'data'); view.setUint32(40, n * 2, true);
+      for (let i = 0; i < n; i++) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      const bytes = new Uint8Array(buffer);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    }
+    let lastActiveLineIdx = -1;
+
+    function renderLyrics() {
+      const track = tracks[currentTrackIndex];
+      const lyrics = track && Array.isArray(track.lyrics) ? track.lyrics : [];
+      const emptyEl = document.getElementById('emptyLyricsState');
+      const mainContainer = document.getElementById('lyricsContainer');
+      const fullContainer = document.getElementById('fullLyricsContainer');
+
+      if (!lyrics.length) {
+        emptyEl.classList.remove('hidden');
+        mainContainer.innerHTML = '';
+        fullContainer.innerHTML = `<div class="text-center text-slate-400 py-20 text-sm">ยังไม่มีเนื้อเพลง กดปุ่ม "✨ ถอดเนื้อ 100%" ด้านบน</div>`;
+        return;
+      }
+      emptyEl.classList.add('hidden');
+      const buildHtml = (prefix) => lyrics.map((line, idx) => `
+        <div id="${prefix}-line-${idx}" onclick="seekToLyricLine(${idx})" class="lyric-line">
+          <span class="lyric-text-wrap">
+            <span class="lyric-base">${escapeHtml(line.text)}</span>
+            <span id="${prefix}-fill-${idx}" class="lyric-fill">${escapeHtml(line.text)}</span>
+          </span>
+        </div>
+      `).join('');
+      mainContainer.innerHTML = buildHtml('main');
+      fullContainer.innerHTML = buildHtml('full');
+      lastActiveLineIdx = -1;
+    }
+
+    function computeWordSweepPct(line, t) {
+      if (t <= line.start) return 0;
+      if (t >= line.end) return 100;
+      if (Array.isArray(line.words) && line.words.length > 0) {
+        const totalChars = line.words.reduce((sum, w) => sum + (w.w ? w.w.length : 1), 0) || 1;
+        let accChars = 0;
+        for (const w of line.words) {
+          const wLen = w.w ? w.w.length : 1;
+          if (t < w.s) return (accChars / totalChars) * 100;
+          if (t >= w.s && t <= w.e) return ((accChars + ((t - w.s) / Math.max(0.05, w.e - w.s)) * wLen) / totalChars) * 100;
+          accChars += wLen;
+        }
+        return 100;
+      }
+      return Math.min(100, Math.max(0, ((t - line.start) / Math.max(0.1, line.end - line.start)) * 100));
+    }
+
+    function updateKaraokeSync() {
+      const track = tracks[currentTrackIndex];
+      if (!track || !track.lyrics || !track.lyrics.length) return;
+      const t = audioEl.currentTime + syncOffset;
+      const lyrics = track.lyrics;
+      let activeIdx = -1;
+      for (let i = 0; i < lyrics.length; i++) {
+        if (t >= lyrics[i].start && t <= lyrics[i].end) { activeIdx = i; break; }
+      }
+      ['main', 'full'].forEach((prefix) => {
+        for (let i = 0; i < lyrics.length; i++) {
+          const lineEl = document.getElementById(`${prefix}-line-${i}`);
+          const fillEl = document.getElementById(`${prefix}-fill-${i}`);
+          if (!lineEl || !fillEl) continue;
+          if (i === activeIdx) {
+            lineEl.classList.add('active'); lineEl.classList.remove('past');
+            fillEl.style.clipPath = `inset(0 ${(100 - computeWordSweepPct(lyrics[i], t)).toFixed(2)}% 0 0)`;
+          } else if (t > lyrics[i].end) {
+            lineEl.classList.remove('active'); lineEl.classList.add('past');
+            fillEl.style.clipPath = 'inset(0 0% 0 0)';
+          } else {
+            lineEl.classList.remove('active', 'past');
+            fillEl.style.clipPath = 'inset(0 100% 0 0)';
+          }
+        }
+      });
+      if (activeIdx !== -1 && activeIdx !== lastActiveLineIdx) {
+        lastActiveLineIdx = activeIdx;
+        document.getElementById(`main-line-${activeIdx}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!document.getElementById('fullLyricsView').classList.contains('hidden')) {
+          document.getElementById(`full-line-${activeIdx}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    function seekToLyricLine(idx) {
+      const track = tracks[currentTrackIndex];
+      if (track && track.lyrics[idx]) {
+        audioEl.currentTime = Math.max(0, track.lyrics[idx].start - syncOffset);
+        if (audioEl.paused) togglePlayPause();
+      }
+    }
+
+    function adjustSyncOffset(delta) {
+      syncOffset = +(syncOffset + delta).toFixed(2);
+      const badge = document.getElementById('syncOffsetBadge');
+      if (badge) badge.textContent = `${syncOffset >= 0 ? '+' : ''}${syncOffset.toFixed(2)}s`;
+      showToast(`⏱️ ปรับจังหวะเนื้อเพลง: ${syncOffset >= 0 ? '+' : ''}${syncOffset.toFixed(2)}s`);
+    }
+
+    let tapSyncCursor = 0;
+    function openLyricEditorModal() {
+      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มเพลง MP3 ก่อนแก้ไขเนื้อเพลง');
+      const track = tracks[currentTrackIndex];
+      document.getElementById('lyricEditorTextarea').value = (track.lyrics || []).map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n');
+      tapSyncCursor = 0;
+      openModal('lyricEditorModal');
+    }
+
+    function autoAlignPlainLyricsToVocal() {
+      const rawLines = document.getElementById('lyricEditorTextarea').value.split('\n').map((l) => l.replace(/\[\d{2}:\d{2}(?:\.\d{2,3})?\]/g, '').trim()).filter(Boolean);
+      if (!rawLines.length) return showToast('กรุณาวางข้อความเนื้อเพลงก่อน');
+      const dur = audioEl.duration && !isNaN(audioEl.duration) ? audioEl.duration : rawLines.length * 4;
+      const intro = Math.min(4, dur * 0.06), step = Math.max(4, dur - intro * 1.5) / rawLines.length;
+      document.getElementById('lyricEditorTextarea').value = rawLines.map((t, i) => `[${formatLrcTimestamp(intro + i * step)}] ${t}`).join('\n');
+      showToast('⚡ จัดเวลาซิงค์ครบทุกบรรทัดแล้ว กดบันทึกได้เลย!');
+    }
+
+    function tapSyncNextLine() {
+      const ta = document.getElementById('lyricEditorTextarea'), lines = ta.value.split('\n');
+      while (tapSyncCursor < lines.length && !lines[tapSyncCursor].trim()) tapSyncCursor++;
+      if (tapSyncCursor >= lines.length) { tapSyncCursor = 0; return showToast('รีเซ็ตกลับไปบรรทัดแรก'); }
+      const clean = lines[tapSyncCursor].replace(/\[\d{2}:\d{2}(?:\.\d{2,3})?\]/g, '').trim();
+      lines[tapSyncCursor] = `[${formatLrcTimestamp(audioEl.currentTime)}] ${clean}`;
+      ta.value = lines.join('\n');
+      tapSyncCursor++;
+      showToast(`👆 บันทึกบรรทัดที่ ${tapSyncCursor}`);
+    }
+
+    async function saveEditedLyrics() {
+      if (currentTrackIndex < 0) return;
+      tracks[currentTrackIndex].lyrics = parseLrcText(document.getElementById('lyricEditorTextarea').value);
+      await saveTrackToDB(tracks[currentTrackIndex]);
+      renderLyrics(); renderTrackLists(); closeModal('lyricEditorModal');
+      showToast('💾 บันทึกเนื้อเพลงเรียบร้อย!');
+    }
+
+    function parseLrcText(text) {
+      const items = [], regex = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]\s*(.*)/;
+      text.split('\n').forEach((raw) => {
+        const m = raw.trim().match(regex);
+        if (m && m[4].trim()) {
+          const start = +(parseInt(m[1], 10) * 60 + parseInt(m[2], 10) + (m[3] ? parseInt(m[3].padEnd(3, '0'), 10) / 1000 : 0)).toFixed(2);
+          items.push({ start, end: start + 4, text: m[4].trim() });
+        }
+      });
+      items.sort((a, b) => a.start - b.start);
+      for (let i = 0; i < items.length; i++) items[i].end = i < items.length - 1 ? Math.max(items[i].start + 0.4, items[i + 1].start - 0.05) : items[i].start + 5;
+      return items;
+    }
+
+    function exportCurrentLrc() {
+      if (currentTrackIndex < 0 || !tracks[currentTrackIndex].lyrics.length) return showToast('ยังไม่มีเนื้อเพลงสำหรับส่งออก');
+      const track = tracks[currentTrackIndex];
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([track.lyrics.map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n')], { type: 'text/plain;charset=utf-8' }));
+      a.download = `${track.title}.lrc`;
+      a.click();
+    }
+
+    // ---------- 18 Rich Colorful Visualizers ----------
+    function buildVisMenu() {
+      document.getElementById('visModeOptionsList').innerHTML = VIS_MODES.map((m, idx) => `
+        <button type="button" onclick="selectVisualizerMode(${idx})"
+          class="w-full text-left px-2 py-1.5 rounded-xl flex items-center gap-1.5 transition ${idx === visModeIndex ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 font-extrabold shadow-sm' : 'bg-slate-900/70 hover:bg-slate-800 border border-slate-800/80 text-slate-200 font-semibold'}">
+          <span class="text-sm shrink-0">${m.icon}</span>
+          <div class="min-w-0">
+            <div class="text-[11px] truncate">${idx + 1}. ${m.name}</div>
+            <div class="text-[9px] text-slate-400 truncate">${m.desc}</div>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function toggleVisPopover(e) {
+      e.stopPropagation();
+      const menu = document.getElementById('visPopoverMenu');
+      if (!menu.classList.contains('hidden')) return menu.classList.add('hidden');
+      buildVisMenu();
+      const rect = e.currentTarget.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 6}px`;
+      menu.style.right = `${Math.max(12, window.innerWidth - rect.right)}px`;
+      menu.classList.remove('hidden');
+    }
+
+    function selectVisualizerMode(idx) {
+      visModeIndex = idx; visEnabled = true;
+      const mode = VIS_MODES[visModeIndex];
+      document.getElementById('visModeCaption').textContent = `${mode.icon} ${mode.name} (${visModeIndex + 1}/${VIS_MODES.length}) — ${mode.desc}`;
+      document.getElementById('visBtnLabel').textContent = `${mode.icon} ${mode.name} ▾`;
+      document.getElementById('visPopoverMenu').classList.add('hidden');
+    }
+
+    function cycleVisualizerMode() {
+      selectVisualizerMode((visModeIndex + 1) % VIS_MODES.length);
+    }
+
+    function randomVisualizerMode() {
+      let next = Math.floor(Math.random() * VIS_MODES.length);
+      if (next === visModeIndex && VIS_MODES.length > 1) next = (next + 1) % VIS_MODES.length;
+      selectVisualizerMode(next);
+      showToast(`🎲 สุ่มคลื่นเสียง: ${VIS_MODES[next].icon} ${VIS_MODES[next].name}`);
+    }
+
+    function toggleVisualizerEnabled() {
+      visEnabled = !visEnabled;
+      document.getElementById('visPowerToggleBtn').textContent = visEnabled ? 'เปิดอยู่' : 'ปิดคลื่น';
+      document.getElementById('visPopoverMenu').classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('visPopoverMenu'), trig = document.getElementById('visDropdownTrigger');
+      if (menu && !menu.contains(e.target) && trig && !trig.contains(e.target)) menu.classList.add('hidden');
+    });
+
+    function initParticles() {
+      particles = Array.from({ length: 55 }, () => ({
+        x: Math.random(), y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.0035, vy: (Math.random() - 0.5) * 0.0035,
+        hue: Math.floor(Math.random() * 360), r: 1.8 + Math.random() * 3.2
+      }));
+      sparks = Array.from({ length: 70 }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 1.4,
+        dist: Math.random(),
+        hue: Math.floor(Math.random() * 360),
+        size: 1.5 + Math.random() * 2.5
+      }));
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w * 0.5, h * 0.5);
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x, y, w, h, radius);
+      } else {
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
+      }
+    }
+
+    function startRenderLoop() {
+      const canvas = document.getElementById('visualizerCanvas'), ctx = canvas.getContext('2d'), freqData = new Uint8Array(128);
+      function frame(now) {
+        requestAnimationFrame(frame);
+        try {
+          if (!isNaN(audioEl.duration) && audioEl.duration > 0) {
+            const pct = (audioEl.currentTime / audioEl.duration) * 1000;
+            document.getElementById('seekSlider').value = pct; document.getElementById('fullSeekSlider').value = pct;
+            document.getElementById('currentTimeLabel').textContent = formatTime(audioEl.currentTime);
+            document.getElementById('durationTimeLabel').textContent = formatTime(audioEl.duration);
+            document.getElementById('fullCurrentTime').textContent = formatTime(audioEl.currentTime);
+            document.getElementById('fullDurationTime').textContent = formatTime(audioEl.duration);
+          }
+          updateKaraokeSync();
+
+          const dpr = Math.min(window.devicePixelRatio || 1, 2), w = canvas.clientWidth, h = canvas.clientHeight;
+          if (w > 0 && h > 0 && (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr))) {
+            canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
+          }
+          ctx.save(); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+          if (!visEnabled) { ctx.restore(); return; }
+
+          const tSec = now * 0.001;
+          if (analyserNode && isPlaying) analyserNode.getByteFrequencyData(freqData);
+          else for (let i = 0; i < freqData.length; i++) freqData[i] = Math.floor(((Math.sin(i * 0.22 + tSec * 2.6) * 0.5 + 0.5) * 0.65 + (Math.cos(i * 0.11 - tSec * 1.8) * 0.5 + 0.5) * 0.35) * 165 + 28);
+
+          const bassEnergy = (freqData[1] + freqData[2] + freqData[3] + freqData[4]) / (4 * 255);
+          const midEnergy = (freqData[14] + freqData[18] + freqData[22]) / (3 * 255);
+          const mode = VIS_MODES[visModeIndex].id;
+
+          if (mode === 'rainbow') {
+            const bars = 48, gap = 2.5, barW = Math.max(2, (w - gap * (bars + 1)) / bars), baseLine = h * 0.8;
+            for (let i = 0; i < bars; i++) {
+              const barH = Math.max(4, (freqData[i] / 255) * (h * 0.6)), x = gap + i * (barW + gap), y = baseLine - barH, hue = (i * 7.5 + tSec * 48) % 360;
+              const grad = ctx.createLinearGradient(x, y, x, baseLine);
+              grad.addColorStop(0, `hsla(${hue}, 96%, 64%, 0.98)`); grad.addColorStop(1, `hsla(${(hue + 55) % 360}, 92%, 48%, 0.32)`);
+              ctx.fillStyle = grad; drawRoundRect(ctx, x, y, barW, barH, 3); ctx.fill();
+              ctx.fillStyle = `hsla(${hue}, 95%, 60%, 0.16)`; ctx.fillRect(x, baseLine + 2, barW, barH * 0.26);
+              peakCaps[i] = barH > peakCaps[i] ? barH : Math.max(2, peakCaps[i] - 1.2);
+              ctx.fillStyle = '#fff'; ctx.fillRect(x, baseLine - peakCaps[i] - 3, barW, 2);
+            }
+          } else if (mode === 'wave') {
+            [
+              { c: '#00f5d4', s: 2.8, a: 0.36, o: 0, lw: 3 },
+              { c: '#8b5cf6', s: -2.1, a: 0.3, o: 1.5, lw: 2.5 },
+              { c: '#ff2a85', s: 3.4, a: 0.25, o: 3.1, lw: 2.5 },
+              { c: '#facc15', s: -3.0, a: 0.2, o: 4.5, lw: 1.8 }
+            ].forEach((l) => {
+              ctx.beginPath(); ctx.strokeStyle = l.c; ctx.lineWidth = l.lw;
+              ctx.shadowBlur = 10; ctx.shadowColor = l.c;
+              for (let x = 0; x <= w; x += 5) {
+                const idx = Math.floor((x / w) * 64);
+                const y = h * 0.54 + Math.sin(x * 0.025 + tSec * l.s + l.o) * (freqData[idx] / 255) * h * l.a;
+                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+              }
+              ctx.stroke();
+            });
+            ctx.shadowBlur = 0;
+          } else if (mode === 'ring') {
+            const cx = w * 0.5, cy = h * 0.52, radius = Math.min(w, h) * 0.22 + bassEnergy * 12;
+            ringRotation += 0.014;
+            const glow = ctx.createRadialGradient(cx, cy, 4, cx, cy, radius * 1.4);
+            glow.addColorStop(0, `hsla(${(tSec * 60) % 360}, 95%, 60%, 0.35)`);
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, radius * 1.4, 0, Math.PI * 2); ctx.fill();
+            for (let i = 0; i < 56; i++) {
+              const angle = (i / 56) * Math.PI * 2 + ringRotation, len = 6 + (freqData[i] / 255) * 34;
+              ctx.strokeStyle = `hsla(${(i * 6.4 + tSec * 55) % 360}, 96%, 62%, 0.95)`; ctx.lineWidth = 2.4;
+              ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+              ctx.lineTo(cx + Math.cos(angle) * (radius + len), cy + Math.sin(angle) * (radius + len)); ctx.stroke();
+            }
+          } else if (mode === 'aurora') {
+            const midY = h * 0.56, grad = ctx.createLinearGradient(0, 0, w, 0);
+            grad.addColorStop(0, 'rgba(0,245,212,0.82)');
+            grad.addColorStop(0.35, 'rgba(56,189,248,0.85)');
+            grad.addColorStop(0.7, 'rgba(168,85,247,0.88)');
+            grad.addColorStop(1, 'rgba(255,42,133,0.82)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(0, midY);
+            for (let x = 0; x <= w; x += 6) ctx.lineTo(x, midY - (freqData[Math.floor((x / w) * 60)] / 255) * (h * 0.38) * (0.6 + 0.4 * Math.sin(x * 0.03 + tSec * 4)));
+            for (let x = w; x >= 0; x -= 6) ctx.lineTo(x, midY + (freqData[Math.floor((x / w) * 60)] / 255) * (h * 0.25) * (0.6 + 0.4 * Math.cos(x * 0.03 - tSec * 3)));
+            ctx.closePath(); ctx.fill();
+          } else if (mode === 'particles') {
+            const coords = [];
+            particles.forEach((p, idx) => {
+              p.x = (p.x + p.vx * (1 + bassEnergy * 3) + 1) % 1;
+              p.y = (p.y + p.vy * (1 + bassEnergy * 3) + 1) % 1;
+              const px = p.x * w, py = p.y * h;
+              coords.push({ px, py, hue: (p.hue + tSec * 50) % 360 });
+              ctx.fillStyle = `hsla(${(p.hue + tSec * 50) % 360}, 95%, 65%, 0.95)`;
+              ctx.beginPath(); ctx.arc(px, py, p.r + (freqData[idx % 48] / 255) * 4, 0, Math.PI * 2); ctx.fill();
+            });
+            for (let i = 0; i < coords.length; i++) {
+              for (let j = i + 1; j < coords.length; j++) {
+                const dx = coords[i].px - coords[j].px, dy = coords[i].py - coords[j].py;
+                const d = Math.hypot(dx, dy);
+                if (d < 62) {
+                  ctx.strokeStyle = `hsla(${coords[i].hue}, 90%, 65%, ${(1 - d / 62) * 0.42})`;
+                  ctx.lineWidth = 1;
+                  ctx.beginPath(); ctx.moveTo(coords[i].px, coords[i].py); ctx.lineTo(coords[j].px, coords[j].py); ctx.stroke();
+                }
+              }
+            }
+          } else if (mode === 'mirror') {
+            const bars = 44, gap = 2.5, barW = Math.max(2, (w - gap * (bars + 1)) / bars), midY = h * 0.54;
+            for (let i = 0; i < bars; i++) {
+              const halfH = Math.max(3, (freqData[i] / 255) * (h * 0.36)), x = gap + i * (barW + gap);
+              ctx.fillStyle = `hsla(${(180 + i * 5 + Math.sin(tSec) * 35) % 360}, 95%, 60%, 0.95)`;
+              drawRoundRect(ctx, x, midY - halfH, barW, halfH - 1, 2); ctx.fill();
+              drawRoundRect(ctx, x, midY + 1, barW, halfH - 1, 2); ctx.fill();
+            }
+          } else if (mode === 'dna') {
+            const nodes = 34, midY = h * 0.54;
+            for (let i = 0; i < nodes; i++) {
+              const x = (i / (nodes - 1)) * (w - 24) + 12;
+              const amp = (0.25 + (freqData[i % 48] / 255) * 0.75) * (h * 0.32);
+              const phase = i * 0.32 + tSec * 3.8;
+              const y1 = midY + Math.sin(phase) * amp;
+              const y2 = midY - Math.sin(phase) * amp;
+              const hue = (i * 10 + tSec * 55) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 90%, 62%, 0.45)`; ctx.lineWidth = 1.6;
+              ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+              ctx.fillStyle = `hsla(${hue}, 96%, 64%, 0.98)`;
+              ctx.beginPath(); ctx.arc(x, y1, 3.6, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = `hsla(${(hue + 140) % 360}, 96%, 64%, 0.98)`;
+              ctx.beginPath(); ctx.arc(x, y2, 3.6, 0, Math.PI * 2); ctx.fill();
+            }
+          } else if (mode === 'fireworks') {
+            const cx = w * 0.5, cy = h * 0.52, maxR = Math.min(w, h) * 0.48;
+            sparks.forEach((sp, idx) => {
+              sp.dist = (sp.dist + sp.speed * 0.015 * (0.6 + bassEnergy * 2.5)) % 1;
+              const r = sp.dist * maxR;
+              const sx = cx + Math.cos(sp.angle + tSec * 0.4) * r;
+              const sy = cy + Math.sin(sp.angle + tSec * 0.4) * r;
+              const tx = cx + Math.cos(sp.angle + tSec * 0.4) * Math.max(0, r - 12);
+              const ty = cy + Math.sin(sp.angle + tSec * 0.4) * Math.max(0, r - 12);
+              const hue = (sp.hue + tSec * 70) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 96%, 64%, ${1 - sp.dist})`;
+              ctx.lineWidth = sp.size;
+              ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(sx, sy); ctx.stroke();
+            });
+          } else if (mode === 'ocean') {
+            for (let layer = 0; layer < 5; layer++) {
+              const hue = (175 + layer * 38 + tSec * 30) % 360;
+              const baseY = h * (0.45 + layer * 0.1);
+              ctx.fillStyle = `hsla(${hue}, 90%, 56%, ${0.28 + layer * 0.1})`;
+              ctx.beginPath(); ctx.moveTo(0, h);
+              for (let x = 0; x <= w; x += 8) {
+                const f = freqData[(Math.floor((x / w) * 40) + layer * 6) % 64] / 255;
+                const y = baseY - Math.sin(x * 0.02 + tSec * (1.8 + layer * 0.5) + layer) * (10 + f * 28);
+                ctx.lineTo(x, y);
+              }
+              ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+            }
+          } else if (mode === 'crystal') {
+            const cx = w * 0.5, cy = h * 0.52, petals = 8;
+            ringRotation += 0.01;
+            for (let p = 0; p < petals; p++) {
+              ctx.save(); ctx.translate(cx, cy); ctx.rotate((p / petals) * Math.PI * 2 + ringRotation);
+              ctx.beginPath(); ctx.moveTo(0, 0);
+              for (let i = 0; i < 16; i++) {
+                const r = 8 + i * 3.4;
+                const spread = (freqData[i * 2] / 255) * 18;
+                ctx.lineTo(r, -spread);
+              }
+              for (let i = 15; i >= 0; i--) {
+                const r = 8 + i * 3.4;
+                const spread = (freqData[i * 2] / 255) * 18;
+                ctx.lineTo(r, spread);
+              }
+              ctx.closePath();
+              ctx.fillStyle = `hsla(${(p * 45 + tSec * 65) % 360}, 95%, 60%, 0.35)`;
+              ctx.strokeStyle = `hsla(${(p * 45 + tSec * 65) % 360}, 95%, 70%, 0.85)`;
+              ctx.lineWidth = 1.2; ctx.fill(); ctx.stroke();
+              ctx.restore();
+            }
+          } else if (mode === 'lightning') {
+            [
+              { hue: (tSec * 90) % 360, off: -10, amp: 32 },
+              { hue: (tSec * 90 + 130) % 360, off: 0, amp: 42 },
+              { hue: (tSec * 90 + 250) % 360, off: 10, amp: 28 }
+            ].forEach((bolt) => {
+              ctx.beginPath();
+              ctx.strokeStyle = `hsla(${bolt.hue}, 98%, 68%, 0.95)`;
+              ctx.shadowBlur = 14; ctx.shadowColor = `hsla(${bolt.hue}, 98%, 60%, 0.9)`;
+              ctx.lineWidth = 2.2;
+              const steps = 28;
+              for (let i = 0; i <= steps; i++) {
+                const x = (i / steps) * w;
+                const energy = freqData[(i * 2) % 64] / 255;
+                const jitter = (i === 0 || i === steps) ? 0 : (Math.sin(i * 19.7 + tSec * 38) * bolt.amp * energy);
+                const y = h * 0.54 + bolt.off + jitter;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+              }
+              ctx.stroke();
+            });
+            ctx.shadowBlur = 0;
+          } else if (mode === 'planet') {
+            const cx = w * 0.5, cy = h * 0.54, coreR = 16 + bassEnergy * 10;
+            const pGrad = ctx.createRadialGradient(cx - 5, cy - 5, 2, cx, cy, coreR);
+            pGrad.addColorStop(0, '#fef08a');
+            pGrad.addColorStop(0.5, '#f97316');
+            pGrad.addColorStop(1, '#db2777');
+            ctx.fillStyle = pGrad; ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, Math.PI * 2); ctx.fill();
+            for (let i = 0; i < 42; i++) {
+              const ang = (i / 42) * Math.PI * 2 + tSec * 1.6;
+              const rx = coreR * 2.1 + (freqData[i] / 255) * 18;
+              const ry = rx * 0.34;
+              const x = cx + Math.cos(ang) * rx;
+              const y = cy + Math.sin(ang) * ry;
+              ctx.fillStyle = `hsla(${(i * 8.5 + tSec * 60) % 360}, 95%, 65%, 0.95)`;
+              ctx.beginPath(); ctx.arc(x, y, 2.3, 0, Math.PI * 2); ctx.fill();
+            }
+          } else if (mode === 'piano') {
+            const keys = 28, gap = 2, keyW = (w - gap * (keys + 1)) / keys;
+            for (let i = 0; i < keys; i++) {
+              const val = freqData[i * 2] / 255;
+              const keyH = 14 + val * (h * 0.56);
+              const x = gap + i * (keyW + gap);
+              const y = h - keyH - 6;
+              const hue = (i * 12 + tSec * 45) % 360;
+              ctx.fillStyle = `hsla(${hue}, 92%, ${45 + val * 25}%, 0.9)`;
+              drawRoundRect(ctx, x, y, keyW, keyH, 4); ctx.fill();
+              if (val > 0.45) {
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(x + keyW * 0.5, y - 6 - val * 14, 2.2, 0, Math.PI * 2); ctx.fill();
+              }
+            }
+          } else if (mode === 'lotus') {
+            const cx = w * 0.5, cy = h * 0.62, layers = 3;
+            for (let l = layers; l >= 1; l--) {
+              const count = 10 + l * 2;
+              const len = 18 + l * 14 + (l === 1 ? bassEnergy : midEnergy) * 22;
+              for (let i = 0; i < count; i++) {
+                const ang = ((i / count) - 0.5) * Math.PI * 1.15 + Math.sin(tSec * 1.5 + l) * 0.08;
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-10, -len * 0.55, 0, -len);
+                ctx.quadraticCurveTo(10, -len * 0.55, 0, 0);
+                ctx.fillStyle = `hsla(${(i * 22 + l * 65 + tSec * 40) % 360}, 95%, 62%, 0.42)`;
+                ctx.strokeStyle = `hsla(${(i * 22 + l * 65 + tSec * 40) % 360}, 95%, 72%, 0.85)`;
+                ctx.lineWidth = 1; ctx.fill(); ctx.stroke();
+                ctx.restore();
+              }
+            }
+          } else if (mode === 'blocks') {
+            const cols = 30, rows = 12, gap = 2.5;
+            const bw = (w - gap * (cols + 1)) / cols;
+            const bh = (h * 0.68 - gap * rows) / rows;
+            const baseY = h * 0.84;
+            for (let c = 0; c < cols; c++) {
+              const activeRows = Math.max(1, Math.round((freqData[c * 2] / 255) * rows));
+              const hue = (c * 11 + tSec * 35) % 360;
+              for (let r = 0; r < activeRows; r++) {
+                const x = gap + c * (bw + gap);
+                const y = baseY - (r + 1) * (bh + gap);
+                ctx.fillStyle = `hsla(${(hue + r * 8) % 360}, 95%, ${52 + r * 2}%, 0.95)`;
+                ctx.fillRect(x, y, bw, bh);
+              }
+            }
+          } else if (mode === 'tunnel') {
+            const cx = w * 0.5, cy = h * 0.52, rings = 10;
+            for (let r = 0; r < rings; r++) {
+              const prog = ((r / rings) + tSec * (0.45 + bassEnergy * 0.6)) % 1;
+              const rad = prog * Math.max(w, h) * 0.62;
+              const hue = (r * 36 + tSec * 80) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 96%, 62%, ${(1 - prog) * 0.9})`;
+              ctx.lineWidth = 1.5 + prog * 3;
+              ctx.beginPath();
+              for (let a = 0; a <= 36; a++) {
+                const theta = (a / 36) * Math.PI * 2 + prog * 1.4;
+                const wobble = 1 + (freqData[a % 36] / 255) * 0.22;
+                const px = cx + Math.cos(theta) * rad * wobble;
+                const py = cy + Math.sin(theta) * rad * 0.65 * wobble;
+                a === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+              }
+              ctx.closePath(); ctx.stroke();
+            }
+          } else if (mode === 'heartbeat') {
+            const cx = w * 0.5, cy = h * 0.54;
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff2a85';
+            ctx.shadowBlur = 12; ctx.shadowColor = '#ff2a85';
+            ctx.lineWidth = 2.6;
+            for (let x = 0; x <= w; x += 4) {
+              const normX = (x / w) * 64;
+              const val = (freqData[Math.floor(normX)] / 255);
+              const spike = Math.sin(x * 0.08 - tSec * 9) * val * (h * 0.34);
+              const y = cy + spike;
+              x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke(); ctx.shadowBlur = 0;
+            const s = 0.75 + bassEnergy * 0.55;
+            ctx.save(); ctx.translate(cx, cy - 6); ctx.scale(s, s);
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.85)';
+            ctx.beginPath();
+            ctx.moveTo(0, 6);
+            ctx.bezierCurveTo(-14, -6, -24, 8, 0, 22);
+            ctx.bezierCurveTo(24, 8, 14, -6, 0, 6);
+            ctx.fill(); ctx.restore();
+          } else {
+            const cx = w * 0.5, cy = h * 0.86, feathers = 27;
+            for (let i = 0; i < feathers; i++) {
+              const t = i / (feathers - 1);
+              const ang = -Math.PI * 0.92 + t * Math.PI * 0.84;
+              const len = (h * 0.42) + (freqData[i * 2] / 255) * (h * 0.34);
+              const ex = cx + Math.cos(ang) * len;
+              const ey = cy + Math.sin(ang) * len;
+              const hue = (i * 13 + tSec * 45) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 92%, 60%, 0.75)`;
+              ctx.lineWidth = 2;
+              ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey); ctx.stroke();
+              ctx.fillStyle = `hsla(${(hue + 40) % 360}, 98%, 65%, 0.95)`;
+              ctx.beginPath(); ctx.arc(ex, ey, 4.2, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = '#0f172a';
+              ctx.beginPath(); ctx.arc(ex, ey, 1.8, 0, Math.PI * 2); ctx.fill();
+            }
+          }
+          ctx.restore();
+        } catch {
+          try { ctx.restore(); } catch {}
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function setActiveView(view) {
+      const fullView = document.getElementById('fullLyricsView');
+      const tabMain = document.getElementById('tabMainView'), tabFull = document.getElementById('tabFullLyricsView');
+      if (view === 'full') {
+        fullView.classList.remove('hidden');
+        tabFull.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-pink-500/25 text-pink-300 border border-pink-400/50 whitespace-nowrap';
+        tabMain.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 text-slate-300 border border-slate-700/80 whitespace-nowrap';
+      } else {
+        fullView.classList.add('hidden');
+        tabMain.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 whitespace-nowrap';
+        tabFull.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 text-slate-300 border border-slate-700/80 whitespace-nowrap';
+      }
+    }
+
+    function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+    function formatTime(sec) {
+      if (!sec || isNaN(sec)) return '00:00';
+      return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+    }
+    function formatLrcTimestamp(sec) {
+      return `${formatTime(sec)}.${String(Math.floor((sec % 1) * 100)).padStart(2, '0')}`;
+    }
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMessage').textContent = msg;
+      box.classList.remove('opacity-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => box.classList.add('opacity-0'), Math.min(7000, 2200 + String(msg).length * 45));
+    }
+
+    audioEl.addEventListener('ended', () => { if (!isLoop) playNextTrack(); });
+    audioEl.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); });
+    audioEl.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); });
+
+    (async function initApp() {
+      buildEqControls();
+      initParticles();
+      updateApiKeyIndicator();
+      startRenderLoop();
+      const savedTracks = await loadTracksFromDB();
+      if (savedTracks.length) {
+        tracks = savedTracks;
+        renderTrackLists();
+        currentTrackIndex = 0;
+        audioEl.src = tracks[0].url;
+        document.getElementById('nowPlayingTitle').textContent = tracks[0].title;
+        document.getElementById('nowPlayingSubtitle').textContent = tracks[0].lyrics?.length ? `🎤 ซิงค์เนื้อเพลงแล้ว ${tracks[0].lyrics.length} บรรทัด` : 'พร้อมเล่นเพลง';
+        document.getElementById('fullViewSongTitle').textContent = `🎤 ${tracks[0].title}`;
+        renderLyrics();
+      } else {
+        renderTrackLists();
+        renderLyrics();
+      }
+    })();
+  </script>
+</body>
+</html>
