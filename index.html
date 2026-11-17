@@ -125,7 +125,6 @@
     .vid-cap-base { color: rgba(255, 255, 255, 0.65); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95); }
     .vid-fs-bar, .vid-fs-top-bar { display: none; }
 
-    /* โหมดขยายเต็มหน้าจอ (รองรับทั้ง Native Fullscreen และ Expanded Overlay) */
     #videoWrap.vid-expanded,
     #videoWrap:fullscreen,
     #videoWrap:-webkit-full-screen {
@@ -165,8 +164,8 @@
   </style>
 </head>
 <body>
-  <!-- Input รองรับมือถือ Android/iOS เปิดเลือกได้ทั้งแกลเลอรีวิดีโอและตัวจัดการไฟล์ -->
-  <input id="globalAudioFileInput" type="file" accept="*/*" multiple class="sr-only" onchange="handleFileSelection(event)" />
+  <!-- Input เปิดได้ทั้งแกลเลอรีวิดีโอและไฟล์เสียงบนมือถือ Android/iOS -->
+  <input id="globalAudioFileInput" type="file" accept="video/*,audio/*,.mp4,.mov,.webm,.mkv,.3gp,.avi,.mp3,.m4a,.wav,.flac,.aac,.ogg,.lrc,.txt" multiple class="sr-only" onchange="handleFileSelection(event)" />
   <input id="globalLrcFileInput" type="file" accept=".lrc,.txt,text/plain" multiple class="sr-only" onchange="handleFileSelection(event)" />
 
   <div class="app-shell">
@@ -192,7 +191,6 @@
         </button>
       </div>
     </header>
-
     <!-- 3-COLUMN STUDIO -->
     <main class="studio-grid">
       <!-- LEFT: LIBRARY (แยกโฟลเดอร์ เพลง MP3 กับ ไฟล์วิดีโอ) -->
@@ -205,7 +203,6 @@
           <button type="button" onclick="openModal('libraryModal')" class="text-[10px] px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">ขยายคลัง</button>
         </div>
 
-        <!-- แถบแยกหมวดหมู่ MP3 / วิดีโอ -->
         <div class="grid grid-cols-2 gap-1 mb-2">
           <button id="sideCatAudioBtn" type="button" onclick="setMediaCategory('audio')"
             class="py-1.5 px-1.5 rounded-lg text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 truncate">
@@ -225,14 +222,12 @@
 
       <!-- CENTER: VISUALIZER + 4 MAIN BUTTONS + BOTTOM VIDEO/LYRICS STAGE + TRANSPORT -->
       <section class="glass-card flex flex-col overflow-hidden p-1.5 sm:p-2 relative">
-        <!-- TOP ROW: VISUALIZER (LEFT) + 4 ACTION BUTTONS (RIGHT) -->
         <div class="flex items-stretch gap-1.5 shrink-0 mb-1.5 h-[146px] sm:h-[158px]">
           <div id="visualizerStageBox" onclick="cycleVisualizerMode()" title="แตะเพื่อเปลี่ยนลูกเล่นคลื่นเสียง 18 แบบ"
             class="relative w-3/4 min-w-0 rounded-xl overflow-hidden border border-slate-800/90 bg-[#050811] cursor-pointer">
             <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
           </div>
 
-          <!-- ปุ่มควบคุมหลัก 4 ปุ่ม ไม่ซ้ำซ้อน -->
           <div class="w-1/4 min-w-0 grid grid-cols-1 grid-rows-4 gap-1.5 text-[10px] sm:text-xs">
             <label for="globalAudioFileInput" title="เพิ่มไฟล์เพลง MP3 / วิดีโอจากมือถือ / เนื้อเพลง .LRC"
               class="min-w-0 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 active:scale-[0.97] text-slate-950 font-extrabold flex items-center justify-center gap-1 px-1.5 shadow whitespace-nowrap overflow-hidden">
@@ -252,6 +247,7 @@
             </button>
           </div>
         </div>
+
         <!-- PROGRESS BAR -->
         <div id="transcribeProgressBox" class="hidden shrink-0 mb-2 bg-slate-900/95 border border-cyan-500/40 rounded-xl p-2">
           <div class="flex items-start justify-between gap-2 mb-1">
@@ -273,22 +269,19 @@
           </div>
         </div>
 
-        <!-- BOTTOM STAGE: LYRICS + VIDEO SCREEN (โล่งสะอาด ไม่มีปุ่มบังขณะดูปกติ) -->
+        <!-- BOTTOM STAGE: LYRICS + VIDEO SCREEN -->
         <div id="bottomStageContainer" class="relative flex-1 min-h-0 rounded-xl bg-slate-950/65 border border-slate-800/80 overflow-hidden flex flex-col">
-          <!-- VIDEO STAGE -->
           <div id="videoWrap" class="hidden pointer-events-none absolute inset-0 z-[15] bg-black flex items-center justify-center" onclick="videoWrapTap(event)" ondblclick="toggleVideoFullscreen(event)">
-            <video id="audioPlayer" preload="metadata" playsinline webkit-playsinline class="w-full h-full object-contain bg-black"></video>
+            <video id="audioPlayer" preload="auto" playsinline webkit-playsinline class="w-full h-full object-contain bg-black"></video>
             <div class="vid-caption">
               <div id="vidCapPill" class="vid-cap-pill empty"><span class="lyric-text-wrap"><span id="vidCapBase" class="vid-cap-base"></span><span id="vidCapFill" class="lyric-fill"></span></span></div>
             </div>
-            <!-- แถบปุ่มกลับหน้าหลักด้านบน (แสดงเฉพาะตอนขยายเต็มหน้าจอเท่านั้น) -->
             <div class="vid-fs-top-bar vid-fs-hud absolute inset-x-0 top-0 z-[5] items-center justify-between gap-2 px-4 py-3 bg-gradient-to-b from-black/85 via-black/50 to-transparent" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
               <button type="button" onclick="exitVideoFullscreenState(event)" class="px-3.5 py-2 rounded-xl bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm border border-rose-300/45 shadow-lg flex items-center gap-1.5 shrink-0">
                 <span>← ✕ ย่อจอ / กลับหน้าหลัก</span>
               </button>
               <div id="vidFsTitleLabel" class="text-xs sm:text-sm font-bold text-slate-200 truncate px-2"></div>
             </div>
-            <!-- แถบควบคุมด้านล่าง (แสดงเฉพาะตอนขยายเต็มหน้าจอเท่านั้น) -->
             <div class="vid-fs-bar vid-fs-hud absolute inset-x-0 bottom-0 z-[5] items-center gap-2.5 px-4 py-3 bg-gradient-to-t from-black/90 via-black/65 to-transparent" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
               <button id="vidPlayBtn" type="button" onclick="togglePlayPause()" class="w-9 h-9 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold flex items-center justify-center shrink-0">▶</button>
               <span id="vidCurrentTime" class="text-xs font-mono text-cyan-300">00:00</span>
@@ -430,14 +423,13 @@
     </div>
   </div>
 
-  <!-- MUSIC & VIDEO LIBRARY MODAL (แยกโฟลเดอร์ เพลง MP3 กับ ไฟล์วิดีโอ) -->
+  <!-- MUSIC & VIDEO LIBRARY MODAL -->
   <div id="libraryModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
     <div class="w-full max-w-xl max-h-[86vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
       <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
         <h3 class="text-sm font-extrabold text-white">📂 คลังสื่อแยกโฟลเดอร์ (บันทึกในเครื่องอัตโนมัติ)</h3>
         <button type="button" onclick="closeModal('libraryModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
       </div>
-      <!-- แถบแยกโฟลเดอร์ใน Modal -->
       <div class="grid grid-cols-2 gap-1.5 mb-3">
         <button id="modalCatAudioBtn" type="button" onclick="setMediaCategory('audio')"
           class="py-2 px-2 rounded-xl text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50">
@@ -486,7 +478,7 @@
     </div>
   </div>
 
-  <!-- UNIFIED EDIT STUDIO MODAL (รวมทุกปุ่มที่ย้ายมาไว้ในปุ่มแก้ไขเดียว) -->
+  <!-- UNIFIED EDIT STUDIO MODAL -->
   <div id="lyricEditorModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
     <div class="w-full max-w-xl max-h-[90vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
       <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
@@ -494,7 +486,6 @@
         <button type="button" onclick="closeModal('lyricEditorModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
       </div>
 
-      <!-- แผงเครื่องมือรวม: ถอดเนื้อเพลงนี้ / ตรวจแก้คำ / .LRC / สลับจอวิดีโอ-เนื้อเพลง / ปรับจังหวะ -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2.5 text-xs">
         <button type="button" onclick="closeModal('lyricEditorModal'); transcribeCurrentTrack100();" class="px-2.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold flex items-center justify-center gap-1">
           <span>✨</span><span>ถอดเนื้อเพลงนี้</span>
@@ -603,7 +594,7 @@
 
     let tracks = [];
     let currentTrackIndex = -1;
-    let currentMediaCategory = 'audio'; // 'audio' = เพลง MP3, 'video' = ไฟล์วิดีโอ
+    let currentMediaCategory = 'audio';
     let isPlaying = false;
     let isShuffle = false;
     let isLoop = false;
@@ -731,6 +722,10 @@
     }
 
     async function saveTrackToDB(track) {
+      // ป้องกันเบราว์เซอร์มือถือค้างเมื่อวิดีโอขนาดใหญ่เกิน 80MB
+      if (track.blob && track.blob.size > 80 * 1024 * 1024) {
+        return false;
+      }
       try {
         const db = await openDB();
         return new Promise((resolve) => {
@@ -1170,7 +1165,6 @@
           : 'preset-btn py-1 px-1 rounded-lg text-[10px] font-bold border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:border-cyan-400 transition';
       });
     }
-
     async function handleFileSelection(event) {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
@@ -1246,7 +1240,6 @@
       document.getElementById('headerTrackCount').textContent = tracks.length;
       document.getElementById('sidebarTrackCount').textContent = `${tracks.length} ไฟล์`;
 
-      // อัปเดตปุ่มสลับโฟลเดอร์ MP3 / วิดีโอ ทั้งใน Sidebar และ Modal
       const sideAudioBtn = document.getElementById('sideCatAudioBtn');
       const sideVideoBtn = document.getElementById('sideCatVideoBtn');
       const modalAudioBtn = document.getElementById('modalCatAudioBtn');
@@ -1317,11 +1310,16 @@
       if (sideEl) sideEl.innerHTML = renderHTML(filtered);
       if (modalEl) modalEl.innerHTML = renderHTML(catTracks);
     }
+
     function selectAndPlayTrack(idx, resumeSec = 0, autoPlay = true) {
       if (idx < 0 || idx >= tracks.length) return;
       currentTrackIndex = idx;
       const track = tracks[idx];
       currentMediaCategory = getTrackMediaType(track);
+      videoAvailable = currentMediaCategory === 'video';
+      if (videoAvailable) userWantsVideo = true;
+      refreshVideoStage();
+
       initAudioEngine();
       audioEl.src = track.url;
       audioEl.load();
@@ -1990,7 +1988,6 @@ ${JSON.stringify(indexedInput)}
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       return btoa(bin);
     }
-
     let lastActiveLineIdx = -1;
 
     function renderLyrics() {
@@ -2717,7 +2714,7 @@ ${JSON.stringify(indexedInput)}
     }
 
     audioEl.addEventListener('loadedmetadata', () => {
-      videoAvailable = audioEl.videoWidth > 0;
+      if (audioEl.videoWidth > 0) videoAvailable = true;
       if (videoAvailable) userWantsVideo = true;
       refreshVideoStage();
     });
