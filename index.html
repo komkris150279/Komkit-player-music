@@ -722,7 +722,6 @@
     }
 
     async function saveTrackToDB(track) {
-      // ป้องกันเบราว์เซอร์มือถือค้างเมื่อวิดีโอขนาดใหญ่เกิน 80MB
       if (track.blob && track.blob.size > 80 * 1024 * 1024) {
         return false;
       }
@@ -2827,6 +2826,11 @@ ${JSON.stringify(indexedInput)}
         renderLyrics();
       }
     })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>
