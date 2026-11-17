@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="NeonSync 100%" />
-  <title>NeonSync Studio 100% — เครื่องเล่น MP3 ถอดเนื้อเพลง 100% &amp; อีควอไลเซอร์</title>
+  <title>NeonSync Studio 100% — เครื่องเล่น MP3 &amp; วิดีโอเพลง ถอดเนื้อเพลง 100% &amp; อีควอไลเซอร์</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -44,7 +44,7 @@
       padding-left: max(6px, env(safe-area-inset-left));
     }
     .studio-grid {
-      display: grid; grid-template-columns: 200px minmax(0, 1fr) 230px;
+      display: grid; grid-template-columns: 220px minmax(0, 1fr) 230px;
       gap: 8px; padding: 6px 4px 8px 4px; width: 100%; height: 100%; min-height: 0; overflow: hidden;
     }
     @media (max-width: 1120px) {
@@ -118,6 +118,45 @@
       box-shadow: 0 0 7px rgba(0, 245, 212, 0.7); cursor: pointer;
     }
 
+    /* Video stage (Bottom Stage & Expanded / Fullscreen) */
+    .vid-caption { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; z-index: 3; }
+    .vid-cap-pill { max-width: 100%; padding: 5px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(6px); text-align: center; font-weight: 800; line-height: 1.45; font-size: clamp(0.95rem, 2vw, 1.35rem); }
+    .vid-cap-pill.empty { display: none; }
+    .vid-cap-base { color: rgba(255, 255, 255, 0.65); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95); }
+    .vid-fs-bar, .vid-fs-top-bar { display: none; }
+
+    /* โหมดขยายเต็มหน้าจอ (รองรับทั้ง Native Fullscreen และ Expanded Overlay) */
+    #videoWrap.vid-expanded,
+    #videoWrap:fullscreen,
+    #videoWrap:-webkit-full-screen {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      z-index: 980 !important;
+      background: #000 !important;
+      border-radius: 0 !important;
+    }
+    #videoWrap.vid-expanded .vid-fs-bar,
+    #videoWrap:fullscreen .vid-fs-bar,
+    #videoWrap:-webkit-full-screen .vid-fs-bar { display: flex; }
+
+    #videoWrap.vid-expanded .vid-fs-top-bar,
+    #videoWrap:fullscreen .vid-fs-top-bar,
+    #videoWrap:-webkit-full-screen .vid-fs-top-bar { display: flex; }
+
+    #videoWrap.vid-expanded .vid-caption,
+    #videoWrap:fullscreen .vid-caption,
+    #videoWrap:-webkit-full-screen .vid-caption { bottom: 78px; }
+
+    #videoWrap.vid-expanded .vid-cap-pill,
+    #videoWrap:fullscreen .vid-cap-pill,
+    #videoWrap:-webkit-full-screen .vid-cap-pill { font-size: clamp(1.25rem, 3.2vw, 2.3rem); padding: 8px 20px; }
+
+    .vid-fs-hud { transition: opacity 0.28s ease; opacity: 1; }
+    .vid-fs-hud.hud-faded { opacity: 0.25; }
+    #videoWrap:hover .vid-fs-hud { opacity: 1; }
+
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 12px rgba(0, 245, 212, 0.3), 0 0 22px rgba(255, 42, 133, 0.22); }
       50% { box-shadow: 0 0 18px rgba(0, 245, 212, 0.55), 0 0 30px rgba(255, 42, 133, 0.42); }
@@ -126,8 +165,8 @@
   </style>
 </head>
 <body>
-  <audio id="audioPlayer" preload="metadata"></audio>
-  <input id="globalAudioFileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.webm,.lrc,.txt" multiple class="sr-only" onchange="handleFileSelection(event)" />
+  <!-- Input รองรับมือถือ Android/iOS เปิดเลือกได้ทั้งแกลเลอรีวิดีโอและตัวจัดการไฟล์ -->
+  <input id="globalAudioFileInput" type="file" accept="*/*" multiple class="sr-only" onchange="handleFileSelection(event)" />
   <input id="globalLrcFileInput" type="file" accept=".lrc,.txt,text/plain" multiple class="sr-only" onchange="handleFileSelection(event)" />
 
   <div class="app-shell">
@@ -138,8 +177,7 @@
           <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center font-extrabold text-slate-950 text-[11px] shadow">NS</div>
           <span class="font-extrabold text-xs tracking-tight bg-gradient-to-r from-cyan-300 via-white to-pink-400 bg-clip-text text-transparent hidden md:inline">NeonSync 100%</span>
         </div>
-        <button id="tabMainView" type="button" onclick="setActiveView('main')" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 whitespace-nowrap">🎵 หลัก</button>
-        <button id="tabFullLyricsView" type="button" onclick="setActiveView('full')" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 hover:bg-pink-500/20 text-slate-200 hover:text-pink-300 border border-slate-700/80 whitespace-nowrap">🎤 เต็มจอ</button>
+        <button id="tabMainView" type="button" onclick="openGoogleModal()" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 whitespace-nowrap">🔎 Google</button>
       </div>
 
       <div class="flex items-center gap-1 shrink-0">
@@ -157,63 +195,63 @@
 
     <!-- 3-COLUMN STUDIO -->
     <main class="studio-grid">
-      <!-- LEFT: LIBRARY -->
+      <!-- LEFT: LIBRARY (แยกโฟลเดอร์ เพลง MP3 กับ ไฟล์วิดีโอ) -->
       <section class="left-col-panel glass-card flex flex-col overflow-hidden p-2.5">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-extrabold text-slate-100">📂 คลังเพลง</span>
-            <span id="sidebarTrackCount" class="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold">0 เพลง</span>
+            <span class="text-xs font-extrabold text-slate-100">📂 คลังสื่อ</span>
+            <span id="sidebarTrackCount" class="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold">0 ไฟล์</span>
           </div>
           <button type="button" onclick="openModal('libraryModal')" class="text-[10px] px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">ขยายคลัง</button>
         </div>
+
+        <!-- แถบแยกหมวดหมู่ MP3 / วิดีโอ -->
+        <div class="grid grid-cols-2 gap-1 mb-2">
+          <button id="sideCatAudioBtn" type="button" onclick="setMediaCategory('audio')"
+            class="py-1.5 px-1.5 rounded-lg text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 truncate">
+            🎵 เพลง MP3 (0)
+          </button>
+          <button id="sideCatVideoBtn" type="button" onclick="setMediaCategory('video')"
+            class="py-1.5 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-800 truncate">
+            🎬 วิดีโอ (0)
+          </button>
+        </div>
+
         <div class="flex gap-1.5 mb-2">
-          <input id="sidebarSearchInput" type="text" oninput="renderTrackLists()" placeholder="ค้นหาเพลงในคลัง..." class="flex-1 min-w-0 bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400" />
+          <input id="sidebarSearchInput" type="text" oninput="renderTrackLists()" placeholder="ค้นหาในหมวดนี้..." class="flex-1 min-w-0 bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400" />
         </div>
         <div id="sidebarTrackList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-0.5"></div>
       </section>
-      <!-- CENTER: VISUALIZER + ACTION ROW + LYRICS + TRANSPORT -->
+
+      <!-- CENTER: VISUALIZER + 4 MAIN BUTTONS + BOTTOM VIDEO/LYRICS STAGE + TRANSPORT -->
       <section class="glass-card flex flex-col overflow-hidden p-1.5 sm:p-2 relative">
-        <div class="flex items-stretch gap-1.5 shrink-0 mb-1.5 h-[170px] sm:h-[176px]">
-          <div id="visualizerStageBox" onclick="cycleVisualizerMode()" title="คลิกเพื่อเปลี่ยนลูกเล่นคลื่นเสียง"
+        <!-- TOP ROW: VISUALIZER (LEFT) + 4 ACTION BUTTONS (RIGHT) -->
+        <div class="flex items-stretch gap-1.5 shrink-0 mb-1.5 h-[146px] sm:h-[158px]">
+          <div id="visualizerStageBox" onclick="cycleVisualizerMode()" title="แตะเพื่อเปลี่ยนลูกเล่นคลื่นเสียง 18 แบบ"
             class="relative w-3/4 min-w-0 rounded-xl overflow-hidden border border-slate-800/90 bg-[#050811] cursor-pointer">
             <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
           </div>
-          <div class="w-1/4 min-w-0 grid grid-cols-1 grid-rows-[repeat(8,minmax(0,1fr))] sm:grid-cols-2 sm:grid-rows-5 gap-1 text-[9px] sm:text-[11px]">
-            <label for="globalAudioFileInput" title="เพิ่มเพลง MP3 / ไฟล์เนื้อเพลง .LRC" class="min-w-0 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 active:scale-[0.97] text-slate-950 font-extrabold flex items-center justify-center gap-0.5 px-0.5 shadow whitespace-nowrap overflow-hidden">
+
+          <!-- ปุ่มควบคุมหลัก 4 ปุ่ม ไม่ซ้ำซ้อน -->
+          <div class="w-1/4 min-w-0 grid grid-cols-1 grid-rows-4 gap-1.5 text-[10px] sm:text-xs">
+            <label for="globalAudioFileInput" title="เพิ่มไฟล์เพลง MP3 / วิดีโอจากมือถือ / เนื้อเพลง .LRC"
+              class="min-w-0 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 active:scale-[0.97] text-slate-950 font-extrabold flex items-center justify-center gap-1 px-1.5 shadow whitespace-nowrap overflow-hidden">
               <span>➕</span><span class="truncate">เพิ่มเพลง</span>
             </label>
-            <button type="button" onclick="transcribeCurrentTrack100()" title="ถอดเนื้อเพลงนี้ 100%"
-              class="ai-glow-btn min-w-0 rounded-lg bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 active:scale-[0.97] text-white font-extrabold flex items-center justify-center gap-0.5 px-0.5 border border-pink-300/30 whitespace-nowrap overflow-hidden">
-              <span>✨</span><span class="truncate">ถอดเนื้อ</span>
-            </button>
-            <button type="button" onclick="transcribeAllTracks()" title="ถอดเนื้อเพลงทั้งคลัง"
-              class="min-w-0 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-400/40 font-bold flex items-center justify-center gap-0.5 px-0.5 whitespace-nowrap overflow-hidden">
+            <button type="button" onclick="transcribeAllTracks()" title="ถอดเนื้อเพลงทั้งหมดในหมวดนี้"
+              class="ai-glow-btn min-w-0 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 active:scale-[0.97] text-white font-extrabold flex items-center justify-center gap-1 px-1.5 border border-pink-300/30 whitespace-nowrap overflow-hidden">
               <span>✨</span><span class="truncate">ถอดทั้งคลัง</span>
             </button>
-            <button type="button" onclick="proofreadCurrentTrackLyrics()" title="ตรวจแก้คำสะกด 100%"
-              class="min-w-0 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 font-bold flex items-center justify-center gap-0.5 px-0.5 whitespace-nowrap overflow-hidden">
-              <span>🔍</span><span class="truncate">ตรวจแก้คำ</span>
+            <button id="expandStageBtn" type="button" onclick="handleUnifiedFullBtn()" title="ขยายวิดีโอเต็มจอ / เนื้อร้องเต็มจอ"
+              class="min-w-0 rounded-xl bg-gradient-to-r from-sky-500/25 to-indigo-500/25 hover:from-sky-500/35 hover:to-indigo-500/35 active:scale-[0.97] text-cyan-200 border border-cyan-400/45 font-extrabold flex items-center justify-center gap-1 px-1.5 whitespace-nowrap overflow-hidden">
+              <span id="expandStageIcon">⛶</span><span id="expandStageLabel" class="truncate">ขยายหน้าจอ</span>
             </button>
-            <button type="button" onclick="openLyricEditorModal()" title="แก้ไขเนื้อเพลง / Sync"
-              class="min-w-0 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 font-semibold flex items-center justify-center gap-0.5 px-0.5 whitespace-nowrap overflow-hidden">
-              <span>📝</span><span class="truncate">แก้ไข/Sync</span>
+            <button type="button" onclick="openLyricEditorModal()" title="รวมเครื่องมือแก้ไขเนื้อเพลง, ซิงค์, ตรวจแก้คำ, .LRC, สลับหน้าจอ"
+              class="min-w-0 rounded-xl bg-slate-800/95 hover:bg-slate-700 active:scale-[0.97] text-amber-300 border border-amber-400/40 font-extrabold flex items-center justify-center gap-1 px-1.5 whitespace-nowrap overflow-hidden">
+              <span>⚙️</span><span class="truncate">แก้ไข</span>
             </button>
-            <button type="button" onclick="exportCurrentLrc()" title="ส่งออกไฟล์ .LRC"
-              class="min-w-0 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 border border-slate-700/80 font-semibold flex items-center justify-center gap-0.5 px-0.5 whitespace-nowrap overflow-hidden">
-              <span>💾</span><span class="truncate">.LRC</span>
-            </button>
-            <button id="visDropdownTrigger" type="button" onclick="toggleVisPopover(event)" title="เลือกลูกเล่นคลื่นเสียง 18 แบบ"
-              class="sm:col-span-2 min-w-0 rounded-lg bg-gradient-to-r from-amber-500/90 to-orange-500/90 active:scale-[0.97] text-slate-950 font-extrabold flex items-center justify-center gap-0.5 px-1 shadow whitespace-nowrap overflow-hidden">
-              <span id="visBtnLabel" class="truncate">🎨 คลื่น 18 แบบ ▾</span>
-            </button>
-            <div class="sm:col-span-2 min-w-0 flex items-center justify-between bg-slate-900/90 border border-slate-700/80 rounded-lg px-0.5 sm:px-1 overflow-hidden">
-              <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-0.5 sm:px-1.5 py-0.5 text-cyan-300 font-bold">-<span class="hidden sm:inline">0.1s</span></button>
-              <span id="syncOffsetBadge" class="font-mono text-cyan-300 font-bold">+0.00s</span>
-              <button type="button" onclick="adjustSyncOffset(0.1)" class="px-0.5 sm:px-1.5 py-0.5 text-pink-300 font-bold">+<span class="hidden sm:inline">0.1s</span></button>
-            </div>
           </div>
         </div>
-
         <!-- PROGRESS BAR -->
         <div id="transcribeProgressBox" class="hidden shrink-0 mb-2 bg-slate-900/95 border border-cyan-500/40 rounded-xl p-2">
           <div class="flex items-start justify-between gap-2 mb-1">
@@ -235,13 +273,36 @@
           </div>
         </div>
 
-        <!-- LYRICS STAGE -->
-        <div class="relative flex-1 min-h-0 rounded-xl bg-slate-950/65 border border-slate-800/80 overflow-hidden flex flex-col">
+        <!-- BOTTOM STAGE: LYRICS + VIDEO SCREEN (โล่งสะอาด ไม่มีปุ่มบังขณะดูปกติ) -->
+        <div id="bottomStageContainer" class="relative flex-1 min-h-0 rounded-xl bg-slate-950/65 border border-slate-800/80 overflow-hidden flex flex-col">
+          <!-- VIDEO STAGE -->
+          <div id="videoWrap" class="hidden pointer-events-none absolute inset-0 z-[15] bg-black flex items-center justify-center" onclick="videoWrapTap(event)" ondblclick="toggleVideoFullscreen(event)">
+            <video id="audioPlayer" preload="metadata" playsinline webkit-playsinline class="w-full h-full object-contain bg-black"></video>
+            <div class="vid-caption">
+              <div id="vidCapPill" class="vid-cap-pill empty"><span class="lyric-text-wrap"><span id="vidCapBase" class="vid-cap-base"></span><span id="vidCapFill" class="lyric-fill"></span></span></div>
+            </div>
+            <!-- แถบปุ่มกลับหน้าหลักด้านบน (แสดงเฉพาะตอนขยายเต็มหน้าจอเท่านั้น) -->
+            <div class="vid-fs-top-bar vid-fs-hud absolute inset-x-0 top-0 z-[5] items-center justify-between gap-2 px-4 py-3 bg-gradient-to-b from-black/85 via-black/50 to-transparent" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
+              <button type="button" onclick="exitVideoFullscreenState(event)" class="px-3.5 py-2 rounded-xl bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm border border-rose-300/45 shadow-lg flex items-center gap-1.5 shrink-0">
+                <span>← ✕ ย่อจอ / กลับหน้าหลัก</span>
+              </button>
+              <div id="vidFsTitleLabel" class="text-xs sm:text-sm font-bold text-slate-200 truncate px-2"></div>
+            </div>
+            <!-- แถบควบคุมด้านล่าง (แสดงเฉพาะตอนขยายเต็มหน้าจอเท่านั้น) -->
+            <div class="vid-fs-bar vid-fs-hud absolute inset-x-0 bottom-0 z-[5] items-center gap-2.5 px-4 py-3 bg-gradient-to-t from-black/90 via-black/65 to-transparent" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
+              <button id="vidPlayBtn" type="button" onclick="togglePlayPause()" class="w-9 h-9 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold flex items-center justify-center shrink-0">▶</button>
+              <span id="vidCurrentTime" class="text-xs font-mono text-cyan-300">00:00</span>
+              <input id="vidSeekSlider" type="range" min="0" max="1000" value="0" oninput="handleSeekInput(this.value)" class="seek-slider flex-1 min-w-0" />
+              <span id="vidDuration" class="text-xs font-mono text-slate-300">00:00</span>
+              <button type="button" onclick="exitVideoFullscreenState(event)" class="px-3 py-1.5 rounded-lg bg-rose-500/35 hover:bg-rose-500/60 text-rose-100 border border-rose-400/55 font-extrabold text-xs shrink-0">✕ ย่อจอ</button>
+            </div>
+          </div>
+
           <div id="emptyLyricsState" class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-10">
             <div class="w-11 h-11 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl mb-2">🎤</div>
-            <h2 class="text-sm sm:text-base font-extrabold text-white mb-1">เวทีเนื้อเพลงคาราโอเกะพร้อมใช้งาน 100%</h2>
+            <h2 class="text-sm sm:text-base font-extrabold text-white mb-1">เวทีเนื้อเพลง &amp; วิดีโอคาราโอเกะพร้อมใช้งาน 100%</h2>
             <p class="text-[11px] text-slate-400 max-w-sm mb-3">
-              กดปุ่ม <span class="text-cyan-300 font-bold">"+ เพิ่มเพลง"</span> แล้วกด <span class="text-pink-400 font-bold">"✨ ถอดเนื้อ"</span> เพื่อถอดเนื้อร้องละเอียดระดับ 24kHz HD พร้อมตรวจแก้คำอัตโนมัติ
+              กดปุ่ม <span class="text-cyan-300 font-bold">"+ เพิ่มเพลง"</span> เพื่อเลือกไฟล์เสียงหรือวิดีโอจากมือถือ แล้วกด <span class="text-amber-300 font-bold">"⚙️ แก้ไข"</span> เพื่อถอดเนื้อเพลงและตั้งค่า
             </p>
             <div class="flex flex-wrap items-center justify-center gap-2">
               <button type="button" onclick="openApiKeyModal()" class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs">
@@ -263,7 +324,7 @@
             <div onclick="tryResumePendingAudio()" class="flex items-center gap-2 min-w-0 flex-1 bg-slate-900/70 border border-slate-800/80 rounded-xl px-2 py-1 cursor-pointer">
               <div class="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-400 via-violet-500 to-pink-500 items-center justify-center text-sm font-extrabold text-slate-950 shrink-0 shadow-[0_0_10px_rgba(139,92,246,0.55)]">♪</div>
               <div class="min-w-0 flex-1 leading-tight">
-                <div id="nowPlayingTitle" class="text-[12px] sm:text-sm font-extrabold text-white truncate">ยังไม่มีเพลงในคลัง</div>
+                <div id="nowPlayingTitle" class="text-[12px] sm:text-sm font-extrabold text-white truncate">ยังไม่มีไฟล์ในคลัง</div>
                 <div id="nowPlayingSubtitle" class="text-[9px] sm:text-[11px] text-cyan-300/90 truncate">กดปุ่ม "+ เพิ่มเพลง" ด้านบน</div>
               </div>
               <span id="visModeCaption" class="hidden"></span>
@@ -316,19 +377,6 @@
     </main>
   </div>
 
-  <!-- VISUALIZER POPOVER MENU -->
-  <div id="visPopoverMenu" class="hidden fixed z-[9999] w-[92vw] max-w-[390px] bg-[#0d1428] border border-cyan-400/45 rounded-2xl shadow-2xl p-2.5 text-xs">
-    <div class="flex items-center justify-between px-1.5 pb-1.5 border-b border-slate-800 mb-2 gap-1">
-      <span class="font-extrabold text-cyan-300 truncate">🎨 คลื่นเสียง 18 แบบ</span>
-      <div class="flex items-center gap-1 shrink-0">
-        <button type="button" onclick="randomVisualizerMode()" class="px-2 py-0.5 rounded bg-violet-500/25 hover:bg-violet-500/40 text-violet-200 font-bold text-[10px] border border-violet-400/35">🎲 สุ่ม</button>
-        <button type="button" onclick="toggleVisualizerEnabled()" id="visPowerToggleBtn" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px]">เปิดอยู่</button>
-        <button type="button" onclick="document.getElementById('visPopoverMenu').classList.add('hidden')" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px]">✕</button>
-      </div>
-    </div>
-    <div id="visModeOptionsList" class="grid grid-cols-2 gap-1.5 max-h-[56vh] overflow-y-auto custom-scroll pr-0.5"></div>
-  </div>
-
   <!-- FULLSCREEN LYRICS OVERLAY -->
   <div id="fullLyricsView" class="hidden fixed inset-0 z-[800] bg-[#060913]/98 backdrop-blur-2xl flex flex-col pr-3">
     <div class="flex items-center justify-between px-3 py-2 border-b border-slate-800/90 bg-slate-950/80 gap-2">
@@ -337,6 +385,7 @@
         <div class="text-[10px] text-cyan-300">แตะบรรทัดใดก็ได้เพื่อกระโดดไปยังท่อนนั้น</div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
+        <button id="fullViewToVideoBtn" type="button" onclick="switchFullLyricsToVideo()" class="hidden px-2 py-1.5 rounded-lg bg-rose-500/25 text-rose-200 border border-rose-400/45 font-extrabold text-[10px] sm:text-[11px]">🎬 ดูวิดีโอเต็มจอ</button>
         <button type="button" onclick="transcribeCurrentTrack100()" class="px-2 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-[10px] sm:text-[11px]">✨ ถอดเนื้อ</button>
         <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-1.5 py-1.5 rounded-lg bg-slate-800 text-cyan-300 font-bold text-[10px]">-0.1s</button>
         <button type="button" onclick="adjustSyncOffset(0.1)" class="px-1.5 py-1.5 rounded-lg bg-slate-800 text-pink-300 font-bold text-[10px]">+0.1s</button>
@@ -381,19 +430,30 @@
     </div>
   </div>
 
-  <!-- MUSIC LIBRARY MODAL -->
+  <!-- MUSIC & VIDEO LIBRARY MODAL (แยกโฟลเดอร์ เพลง MP3 กับ ไฟล์วิดีโอ) -->
   <div id="libraryModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
     <div class="w-full max-w-xl max-h-[86vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
-      <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
-        <h3 class="text-sm font-extrabold text-white">📂 คลังเพลงทั้งหมด (บันทึกในเครื่องอัตโนมัติ)</h3>
+      <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-white">📂 คลังสื่อแยกโฟลเดอร์ (บันทึกในเครื่องอัตโนมัติ)</h3>
         <button type="button" onclick="closeModal('libraryModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
+      </div>
+      <!-- แถบแยกโฟลเดอร์ใน Modal -->
+      <div class="grid grid-cols-2 gap-1.5 mb-3">
+        <button id="modalCatAudioBtn" type="button" onclick="setMediaCategory('audio')"
+          class="py-2 px-2 rounded-xl text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50">
+          🎵 โฟลเดอร์เพลง MP3 (0)
+        </button>
+        <button id="modalCatVideoBtn" type="button" onclick="setMediaCategory('video')"
+          class="py-2 px-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800">
+          🎬 โฟลเดอร์ไฟล์วิดีโอ (0)
+        </button>
       </div>
       <div class="flex flex-wrap gap-2 mb-3">
         <label for="globalAudioFileInput" class="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs inline-flex items-center">
-          ➕ เพิ่มไฟล์ MP3 / .LRC
+          ➕ เพิ่มไฟล์ MP3 / วิดีโอ / .LRC
         </label>
-        <button type="button" onclick="transcribeAllTracks()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-xs">✨ ถอดเนื้อทั้งคลัง</button>
-        <button type="button" onclick="clearAllTracks()" class="px-3 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs ml-auto">🗑️ ล้างคลังทั้งหมด</button>
+        <button id="modalTranscribeCatBtn" type="button" onclick="transcribeAllTracks()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-xs">✨ ถอดเนื้อหมวดนี้</button>
+        <button id="modalClearCatBtn" type="button" onclick="clearCurrentCategoryTracks()" class="px-3 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs ml-auto">🗑️ ล้างหมวดนี้</button>
       </div>
       <div id="modalTrackList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1"></div>
     </div>
@@ -426,23 +486,65 @@
     </div>
   </div>
 
-  <!-- LYRIC EDITOR & TAP-SYNC STUDIO MODAL -->
+  <!-- UNIFIED EDIT STUDIO MODAL (รวมทุกปุ่มที่ย้ายมาไว้ในปุ่มแก้ไขเดียว) -->
   <div id="lyricEditorModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
-    <div class="w-full max-w-xl max-h-[88vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
-      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
-        <h3 class="text-sm font-extrabold text-white">📝 แก้ไขเนื้อเพลง / ซิงค์อัตโนมัติ / Tap-Sync</h3>
+    <div class="w-full max-w-xl max-h-[90vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-white">⚙️ แก้ไขเนื้อเพลง / ซิงค์ / ควบคุมหน้าจอ</h3>
         <button type="button" onclick="closeModal('lyricEditorModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
       </div>
-      <textarea id="lyricEditorTextarea" rows="10" placeholder="วางเนื้อเพลงที่นี่ บรรทัดละ 1 ท่อนร้อง..." class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 font-mono leading-relaxed focus:outline-none focus:border-cyan-400 mb-3"></textarea>
+
+      <!-- แผงเครื่องมือรวม: ถอดเนื้อเพลงนี้ / ตรวจแก้คำ / .LRC / สลับจอวิดีโอ-เนื้อเพลง / ปรับจังหวะ -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2.5 text-xs">
+        <button type="button" onclick="closeModal('lyricEditorModal'); transcribeCurrentTrack100();" class="px-2.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold flex items-center justify-center gap-1">
+          <span>✨</span><span>ถอดเนื้อเพลงนี้</span>
+        </button>
+        <button type="button" onclick="proofreadCurrentTrackLyrics()" class="px-2.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 font-bold flex items-center justify-center gap-1">
+          <span>🔍</span><span>ตรวจแก้คำ</span>
+        </button>
+        <button type="button" onclick="exportCurrentLrc()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-bold flex items-center justify-center gap-1">
+          <span>💾</span><span>ส่งออก .LRC</span>
+        </button>
+        <button id="editModalVideoToggleBtn" type="button" onclick="toggleVideoView(); updateEditModalControls();" class="col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-center gap-1">
+          <span id="editModalVideoToggleLabel">🎬 ไม่มีวิดีโอ</span>
+        </button>
+        <div class="col-span-2 flex items-center justify-between bg-slate-900 border border-slate-700/90 rounded-xl px-2.5 py-1.5">
+          <span class="text-[11px] font-bold text-slate-400">⏱️ จังหวะ:</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-extrabold">-0.1s</button>
+            <span id="syncOffsetBadge" class="font-mono text-cyan-300 font-extrabold text-xs">+0.00s</span>
+            <button type="button" onclick="adjustSyncOffset(0.1)" class="px-2 py-0.5 rounded bg-slate-800 text-pink-300 font-extrabold">+0.1s</button>
+            <button type="button" onclick="resetSyncOffset()" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">รีเซ็ต</button>
+          </div>
+        </div>
+      </div>
+
+      <textarea id="lyricEditorTextarea" rows="9" placeholder="วางเนื้อเพลงที่นี่ บรรทัดละ 1 ท่อนร้อง..." class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 font-mono leading-relaxed focus:outline-none focus:border-cyan-400 mb-3"></textarea>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="autoAlignPlainLyricsToVocal()" class="px-2.5 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-xs">⚡ ซิงค์อัตโนมัติ</button>
-          <button type="button" onclick="proofreadEditorTextarea()" class="px-2.5 py-2 rounded-xl bg-violet-500/20 border border-violet-400/40 text-violet-200 font-extrabold text-xs">🔍 เกลาคำสะกด</button>
+          <button type="button" onclick="proofreadEditorTextarea()" class="px-2.5 py-2 rounded-xl bg-violet-500/20 border border-violet-400/40 text-violet-200 font-extrabold text-xs">🔍 เกลาคำในกล่อง</button>
         </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="tapSyncNextLine()" class="px-2.5 py-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 font-extrabold text-xs">👆 แตะจับจังหวะ</button>
           <button type="button" onclick="saveEditedLyrics()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs">💾 บันทึกเนื้อเพลง</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOOGLE / OPEN LINK MODAL -->
+  <div id="googleModal" class="hidden fixed inset-0 z-[950] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="w-full max-w-md bg-[#0c1326] border border-cyan-400/45 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
+        <h3 class="text-sm font-extrabold text-cyan-300">🔎 Google — ค้นหาหรือเปิดลิงก์</h3>
+        <button type="button" onclick="closeModal('googleModal')" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed mb-3">พิมพ์คำค้นหา (เช่น ชื่อเพลง) เพื่อค้นใน Google หรือวางลิงก์ (เช่น YouTube) เพื่อเปิดลิงก์นั้นในแท็บใหม่</p>
+      <input id="googleQueryInput" type="text" inputmode="url" autocomplete="off" placeholder="ค้นหาใน Google หรือวางลิงก์ที่นี่..." onkeydown="if(event.key==='Enter'){runGoogleOpen();}" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white outline-none mb-3" />
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onclick="window.open('https://www.google.com/','_blank','noopener')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700">↗ เปิด google.com</button>
+        <button type="button" onclick="runGoogleOpen()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold text-xs shadow">🔎 ค้นหา / เปิดลิงก์</button>
       </div>
     </div>
   </div>
@@ -501,6 +603,7 @@
 
     let tracks = [];
     let currentTrackIndex = -1;
+    let currentMediaCategory = 'audio'; // 'audio' = เพลง MP3, 'video' = ไฟล์วิดีโอ
     let isPlaying = false;
     let isShuffle = false;
     let isLoop = false;
@@ -536,6 +639,31 @@
 
     let lastSavedStateAt = 0;
     let pendingResumePlay = false;
+
+    function isVideoFile(fileOrName, mimeType = '') {
+      const name = typeof fileOrName === 'string' ? fileOrName : (fileOrName?.name || '');
+      const type = mimeType || (typeof fileOrName === 'object' ? (fileOrName?.type || '') : '');
+      if (type.startsWith('video/')) return true;
+      return /\.(mp4|m4v|mov|mkv|webm|3gp|3gpp|ogv|avi|ts|mts|m2ts|wmv|flv)$/i.test(name);
+    }
+
+    function isAudioFile(fileOrName, mimeType = '') {
+      const name = typeof fileOrName === 'string' ? fileOrName : (fileOrName?.name || '');
+      const type = mimeType || (typeof fileOrName === 'object' ? (fileOrName?.type || '') : '');
+      if (type.startsWith('audio/')) return true;
+      return /\.(mp3|wav|m4a|ogg|oga|opus|weba|flac|aac|wma|mka|amr|mid|midi)$/i.test(name);
+    }
+
+    function getTrackMediaType(t) {
+      if (t.mediaType === 'video' || t.mediaType === 'audio') return t.mediaType;
+      if (t.blob && isVideoFile(t.blob)) return 'video';
+      return 'audio';
+    }
+
+    function setMediaCategory(cat) {
+      currentMediaCategory = cat === 'video' ? 'video' : 'audio';
+      renderTrackLists();
+    }
 
     function savePlaybackState(force = false) {
       const now = Date.now();
@@ -609,6 +737,7 @@
           const tx = db.transaction(DB_STORE, 'readwrite');
           tx.objectStore(DB_STORE).put({
             id: track.id, title: track.title, artist: track.artist,
+            mediaType: getTrackMediaType(track),
             duration: track.duration || 0, blob: track.blob || null, lyrics: track.lyrics || []
           });
           tx.oncomplete = () => resolve(true);
@@ -625,7 +754,9 @@
           const req = tx.objectStore(DB_STORE).getAll();
           req.onsuccess = () => {
             resolve((req.result || []).map((item) => ({
-              ...item, url: item.blob ? URL.createObjectURL(item.blob) : ''
+              ...item,
+              mediaType: item.mediaType || (item.blob && isVideoFile(item.blob) ? 'video' : 'audio'),
+              url: item.blob ? URL.createObjectURL(item.blob) : ''
             })).filter((t) => t.url));
           };
           req.onerror = () => resolve([]);
@@ -1048,11 +1179,16 @@
     }
 
     async function ingestFiles(files) {
-      const audioFiles = [], lrcFiles = [];
+      const mediaFiles = [], lrcFiles = [];
       files.forEach((f) => {
         const lower = f.name.toLowerCase();
-        if (lower.endsWith('.lrc') || lower.endsWith('.txt')) lrcFiles.push(f);
-        else if (f.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|flac|aac|webm)$/i.test(lower)) audioFiles.push(f);
+        if (lower.endsWith('.lrc') || lower.endsWith('.txt')) {
+          lrcFiles.push(f);
+        } else if (isVideoFile(f) || isAudioFile(f)) {
+          mediaFiles.push(f);
+        } else if (!f.type && f.size > 0 && !/\.(jpg|jpeg|png|gif|webp|pdf|doc|docx|xls|xlsx|zip|rar|apk|html|json|js|css)$/i.test(lower)) {
+          mediaFiles.push(f);
+        }
       });
 
       const lrcMap = new Map();
@@ -1063,15 +1199,17 @@
       }
 
       let firstNewIdx = -1;
-      for (const af of audioFiles) {
-        const cleanTitle = af.name.replace(/\.[^.]+$/, '').trim();
+      for (const mf of mediaFiles) {
+        const cleanTitle = mf.name.replace(/\.[^.]+$/, '').trim();
+        const mType = isVideoFile(mf) ? 'video' : 'audio';
         const newTrack = {
           id: 'trk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
           title: cleanTitle,
-          artist: 'ไฟล์เพลงในเครื่อง',
+          artist: mType === 'video' ? 'ไฟล์วิดีโอในเครื่อง' : 'ไฟล์เพลงในเครื่อง',
+          mediaType: mType,
           duration: 0,
-          blob: af,
-          url: URL.createObjectURL(af),
+          blob: mf,
+          url: URL.createObjectURL(mf),
           lyrics: lrcMap.get(cleanTitle.toLowerCase()) || []
         };
         tracks.push(newTrack);
@@ -1079,7 +1217,7 @@
         await saveTrackToDB(newTrack);
       }
 
-      if (!audioFiles.length && lrcFiles.length && currentTrackIndex >= 0) {
+      if (!mediaFiles.length && lrcFiles.length && currentTrackIndex >= 0) {
         const firstLrc = Array.from(lrcMap.values())[0];
         if (firstLrc && firstLrc.length) {
           tracks[currentTrackIndex].lyrics = firstLrc;
@@ -1089,39 +1227,80 @@
         }
       }
 
-      renderTrackLists();
       if (firstNewIdx >= 0) {
+        currentMediaCategory = getTrackMediaType(tracks[firstNewIdx]);
+        renderTrackLists();
         selectAndPlayTrack(firstNewIdx);
-        showToast(`🎵 เพิ่มเพลง "${tracks[firstNewIdx].title}" เข้าคลังแล้ว`);
-      } else if (!audioFiles.length && !lrcFiles.length) {
-        showToast('⚠️ กรุณาเลือกไฟล์เสียง MP3, WAV, M4A หรือ .LRC');
+        const typeLabel = currentMediaCategory === 'video' ? 'วิดีโอ' : 'เพลง';
+        showToast(`🎵 เพิ่ม${typeLabel} "${tracks[firstNewIdx].title}" เข้าโฟลเดอร์แล้ว`);
+      } else {
+        renderTrackLists();
+        if (!lrcFiles.length) showToast('⚠️ กรุณาเลือกไฟล์เสียง MP3, WAV, M4A, วิดีโอ MP4 หรือ .LRC');
       }
     }
 
     function renderTrackLists() {
-      const query = (document.getElementById('sidebarSearchInput')?.value || '').toLowerCase().trim();
-      const filtered = tracks.map((t, idx) => ({ t, idx })).filter(({ t }) => !query || t.title.toLowerCase().includes(query));
+      const audioCount = tracks.filter((t) => getTrackMediaType(t) === 'audio').length;
+      const videoCount = tracks.filter((t) => getTrackMediaType(t) === 'video').length;
+
       document.getElementById('headerTrackCount').textContent = tracks.length;
-      document.getElementById('sidebarTrackCount').textContent = `${tracks.length} เพลง`;
+      document.getElementById('sidebarTrackCount').textContent = `${tracks.length} ไฟล์`;
+
+      // อัปเดตปุ่มสลับโฟลเดอร์ MP3 / วิดีโอ ทั้งใน Sidebar และ Modal
+      const sideAudioBtn = document.getElementById('sideCatAudioBtn');
+      const sideVideoBtn = document.getElementById('sideCatVideoBtn');
+      const modalAudioBtn = document.getElementById('modalCatAudioBtn');
+      const modalVideoBtn = document.getElementById('modalCatVideoBtn');
+
+      if (sideAudioBtn && sideVideoBtn) {
+        sideAudioBtn.textContent = `🎵 เพลง MP3 (${audioCount})`;
+        sideVideoBtn.textContent = `🎬 วิดีโอ (${videoCount})`;
+        sideAudioBtn.className = currentMediaCategory === 'audio'
+          ? 'py-1.5 px-1.5 rounded-lg text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 truncate'
+          : 'py-1.5 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-800 truncate';
+        sideVideoBtn.className = currentMediaCategory === 'video'
+          ? 'py-1.5 px-1.5 rounded-lg text-[10px] font-extrabold bg-pink-500/20 text-pink-300 border border-pink-400/50 truncate'
+          : 'py-1.5 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-800 truncate';
+      }
+
+      if (modalAudioBtn && modalVideoBtn) {
+        modalAudioBtn.textContent = `🎵 โฟลเดอร์เพลง MP3 (${audioCount})`;
+        modalVideoBtn.textContent = `🎬 โฟลเดอร์ไฟล์วิดีโอ (${videoCount})`;
+        modalAudioBtn.className = currentMediaCategory === 'audio'
+          ? 'py-2 px-2 rounded-xl text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50'
+          : 'py-2 px-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800';
+        modalVideoBtn.className = currentMediaCategory === 'video'
+          ? 'py-2 px-2 rounded-xl text-xs font-extrabold bg-pink-500/20 text-pink-300 border border-pink-400/50'
+          : 'py-2 px-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800';
+      }
+
+      const catTracks = tracks.map((t, idx) => ({ t, idx })).filter(({ t }) => getTrackMediaType(t) === currentMediaCategory);
+      const query = (document.getElementById('sidebarSearchInput')?.value || '').toLowerCase().trim();
+      const filtered = catTracks.filter(({ t }) => !query || t.title.toLowerCase().includes(query));
+
+      const emptyLabel = currentMediaCategory === 'video'
+        ? 'ยังไม่มีไฟล์วิดีโอในโฟลเดอร์นี้<br/>กด "+ เพิ่มเพลง" แล้วเลือกไฟล์วิดีโอจากมือถือ'
+        : 'ยังไม่มีเพลง MP3 ในโฟลเดอร์นี้<br/>กด "+ เพิ่มเพลง" เพื่อเริ่มต้น';
 
       const renderHTML = (list) => {
-        if (!list.length) return `<div class="text-center py-8 text-xs text-slate-500">ยังไม่มีเพลงในคลัง<br/>กด "+ เพิ่มเพลง" เพื่อเริ่มต้น</div>`;
-        return list.map(({ t, idx }) => {
+        if (!list.length) return `<div class="text-center py-8 text-xs text-slate-500">${emptyLabel}</div>`;
+        return list.map(({ t, idx }, catPos) => {
           const active = idx === currentTrackIndex;
           const hasLyrics = t.lyrics && t.lyrics.length > 0;
           const isWorking = t.id === transcribingTrackId;
           const isQueued = queuedTrackIds.has(t.id);
+          const isVid = getTrackMediaType(t) === 'video';
           return `
             <div onclick="selectAndPlayTrack(${idx})"
               class="flex items-center justify-between gap-2 p-2 rounded-xl cursor-pointer border transition ${
                 active ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-400/50 text-white' : 'bg-slate-900/65 hover:bg-slate-800/80 border-slate-800/80 text-slate-300'
               }">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold shrink-0 ${active ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'}">
-                  ${active && isPlaying ? '▶' : idx + 1}
+                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-extrabold shrink-0 ${active ? (isVid ? 'bg-pink-400 text-slate-950' : 'bg-cyan-400 text-slate-950') : 'bg-slate-800 text-slate-400'}">
+                  ${active && isPlaying ? '▶' : catPos + 1}
                 </span>
                 <div class="min-w-0">
-                  <div class="text-xs font-bold truncate">${escapeHtml(t.title)}</div>
+                  <div class="text-xs font-bold truncate">${isVid ? '🎬 ' : '🎵 '}${escapeHtml(t.title)}</div>
                   <div class="text-[10px] ${isWorking ? 'text-amber-300 font-bold' : isQueued ? 'text-violet-300' : hasLyrics ? 'text-emerald-400' : 'text-slate-500'}">
                     ${isWorking ? '⏳ กำลังถอดเนื้อเพลง...' : isQueued ? '🕒 รอคิวถอดเนื้อเพลง' : hasLyrics ? `🎤 มีเนื้อเพลง (${t.lyrics.length} บรรทัด)` : 'ยังไม่มีเนื้อเพลง'}
                   </div>
@@ -1136,21 +1315,23 @@
       const sideEl = document.getElementById('sidebarTrackList');
       const modalEl = document.getElementById('modalTrackList');
       if (sideEl) sideEl.innerHTML = renderHTML(filtered);
-      if (modalEl) modalEl.innerHTML = renderHTML(tracks.map((t, idx) => ({ t, idx })));
+      if (modalEl) modalEl.innerHTML = renderHTML(catTracks);
     }
-
     function selectAndPlayTrack(idx, resumeSec = 0, autoPlay = true) {
       if (idx < 0 || idx >= tracks.length) return;
       currentTrackIndex = idx;
       const track = tracks[idx];
+      currentMediaCategory = getTrackMediaType(track);
       initAudioEngine();
       audioEl.src = track.url;
       audioEl.load();
 
       document.getElementById('nowPlayingTitle').textContent = track.title;
       document.getElementById('nowPlayingSubtitle').textContent =
-        track.lyrics && track.lyrics.length ? `🎤 ซิงค์เนื้อเพลงแล้ว ${track.lyrics.length} บรรทัด` : 'กดปุ่ม "✨ ถอดเนื้อ" เพื่อสร้างเนื้อร้องอัตโนมัติ';
+        track.lyrics && track.lyrics.length ? `🎤 ซิงค์เนื้อเพลงแล้ว ${track.lyrics.length} บรรทัด` : 'กดปุ่ม "⚙️ แก้ไข" > "✨ ถอดเนื้อเพลงนี้"';
       document.getElementById('fullViewSongTitle').textContent = `🎤 ${track.title}`;
+      const fsTitle = document.getElementById('vidFsTitleLabel');
+      if (fsTitle) fsTitle.textContent = `🎬 ${track.title}`;
 
       renderLyrics();
       renderTrackLists();
@@ -1195,7 +1376,7 @@
 
     function togglePlayPause() {
       pendingResumePlay = false;
-      if (currentTrackIndex < 0) return tracks.length ? selectAndPlayTrack(0) : showToast('กรุณาเพิ่มไฟล์เพลง MP3 ก่อนกดเล่น');
+      if (currentTrackIndex < 0) return tracks.length ? selectAndPlayTrack(0) : showToast('กรุณาเพิ่มไฟล์เพลง MP3 หรือวิดีโอก่อนกดเล่น');
       initAudioEngine();
       if (audioEl.paused) {
         audioEl.play().then(() => {
@@ -1215,13 +1396,29 @@
       const icon = isPlaying ? '⏸' : '▶';
       document.getElementById('playPauseBtn').textContent = icon;
       document.getElementById('fullPlayPauseBtn').textContent = icon;
+      const vpb = document.getElementById('vidPlayBtn');
+      if (vpb) vpb.textContent = icon;
       renderTrackLists();
     }
 
-    function playPrevTrack() { if (tracks.length) selectAndPlayTrack((currentTrackIndex - 1 + tracks.length) % tracks.length); }
+    function playPrevTrack() {
+      const catIndices = tracks.map((t, i) => (getTrackMediaType(t) === currentMediaCategory ? i : -1)).filter((i) => i >= 0);
+      if (!catIndices.length) return;
+      const pos = catIndices.indexOf(currentTrackIndex);
+      const prevIdx = pos >= 0 ? catIndices[(pos - 1 + catIndices.length) % catIndices.length] : catIndices[0];
+      selectAndPlayTrack(prevIdx);
+    }
+
     function playNextTrack() {
-      if (!tracks.length) return;
-      selectAndPlayTrack(isShuffle ? Math.floor(Math.random() * tracks.length) : (currentTrackIndex + 1) % tracks.length);
+      const catIndices = tracks.map((t, i) => (getTrackMediaType(t) === currentMediaCategory ? i : -1)).filter((i) => i >= 0);
+      if (!catIndices.length) return;
+      if (isShuffle) {
+        selectAndPlayTrack(catIndices[Math.floor(Math.random() * catIndices.length)]);
+      } else {
+        const pos = catIndices.indexOf(currentTrackIndex);
+        const nextIdx = pos >= 0 ? catIndices[(pos + 1) % catIndices.length] : catIndices[0];
+        selectAndPlayTrack(nextIdx);
+      }
     }
 
     function toggleShuffle() {
@@ -1240,7 +1437,7 @@
         ? 'w-7 h-7 rounded-lg bg-pink-500/25 text-pink-300 flex items-center justify-center text-xs border border-pink-400'
         : 'w-7 h-7 rounded-lg bg-slate-800/90 text-slate-400 flex items-center justify-center text-xs border border-slate-700/70';
       savePlaybackState(true);
-      showToast(isLoop ? '🔁 เล่นซ้ำเพลงนี้' : '🔁 ปิดเล่นซ้ำ');
+      showToast(isLoop ? '🔁 เล่นซ้ำไฟล์นี้' : '🔁 ปิดเล่นซ้ำ');
     }
 
     function handleSeekInput(val) {
@@ -1272,7 +1469,7 @@
         updatePlayPauseUI();
         if (currentTrackIndex >= 0) selectAndPlayTrack(0);
         else {
-          document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง';
+          document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีไฟล์ในคลัง';
           renderLyrics();
           savePlaybackState(true);
         }
@@ -1283,15 +1480,33 @@
       renderTrackLists();
     }
 
-    async function clearAllTracks() {
-      tracks.forEach((t) => t.url && URL.revokeObjectURL(t.url));
-      tracks = []; currentTrackIndex = -1; audioEl.pause(); audioEl.src = ''; isPlaying = false; updatePlayPauseUI();
-      try { (await openDB()).transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).clear(); } catch {}
-      localStorage.removeItem(PLAYBACK_STATE_STORAGE);
-      document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีเพลงในคลัง';
-      renderTrackLists(); renderLyrics();
-      showToast('🗑️ ล้างคลังเพลงทั้งหมดเรียบร้อย');
+    async function clearCurrentCategoryTracks() {
+      const toRemove = tracks.filter((t) => getTrackMediaType(t) === currentMediaCategory);
+      if (!toRemove.length) return showToast('ไม่มีรายการในหมวดนี้');
+      for (const t of toRemove) {
+        if (t.url) URL.revokeObjectURL(t.url);
+        await deleteTrackFromDB(t.id);
+      }
+      const playingRemoved = currentTrackIndex >= 0 && getTrackMediaType(tracks[currentTrackIndex]) === currentMediaCategory;
+      tracks = tracks.filter((t) => getTrackMediaType(t) !== currentMediaCategory);
+      if (playingRemoved) {
+        audioEl.pause(); audioEl.src = ''; isPlaying = false;
+        currentTrackIndex = tracks.length ? 0 : -1;
+        updatePlayPauseUI();
+        if (currentTrackIndex >= 0) selectAndPlayTrack(0);
+        else {
+          document.getElementById('nowPlayingTitle').textContent = 'ยังไม่มีไฟล์ในคลัง';
+          renderLyrics();
+          savePlaybackState(true);
+        }
+      } else if (currentTrackIndex >= 0) {
+        const curId = tracks[currentTrackIndex]?.id;
+        currentTrackIndex = tracks.findIndex((t) => t.id === curId);
+      }
+      renderTrackLists();
+      showToast(`🗑️ ล้างโฟลเดอร์${currentMediaCategory === 'video' ? 'วิดีโอ' : 'เพลง MP3'}เรียบร้อย`);
     }
+
     let transcribingTrackId = null;
     let queuedTrackIds = new Set();
     let transcribeHeaderText = '';
@@ -1331,9 +1546,9 @@
     function setTranscribeHeader(title, idx, total) {
       const e = transcribeEls();
       transcribeHeaderTitle = title;
-      transcribeHeaderText = `⏳ กำลังถอดเนื้อเพลง: ${title}${total > 1 ? ` (เพลงที่ ${idx}/${total})` : ''}`;
+      transcribeHeaderText = `⏳ กำลังถอดเนื้อเพลง: ${title}${total > 1 ? ` (ไฟล์ที่ ${idx}/${total})` : ''}`;
       e.name.textContent = title;
-      e.badge.textContent = `เพลงที่ ${idx}/${total}`;
+      e.badge.textContent = `ไฟล์ที่ ${idx}/${total}`;
       e.badge.classList.toggle('hidden', total <= 1);
       e.fullBanner.textContent = transcribeHeaderText;
       e.fullBanner.classList.remove('hidden');
@@ -1487,7 +1702,7 @@ ${JSON.stringify(indexedInput)}
     }
 
     async function transcribeSingleTrack(track, userKey) {
-      if (!track.blob) throw makeError('ไม่พบไฟล์เสียงของเพลงนี้');
+      if (!track.blob) throw makeError('ไม่พบไฟล์เสียงของรายการนี้');
       setTranscribeProgress(2, 'กำลังอ่านไฟล์เสียงความละเอียดสูง...');
 
       const targetRate = 24000;
@@ -1611,7 +1826,7 @@ ${JSON.stringify(indexedInput)}
         throw fatalErr;
       }
       if (cancelRequested || fatalErr) return { status: 'cancelled', count: merged.length, failed };
-      if (!merged.length) throw makeError(failed.length ? (lastErrMsg || 'ถอดเนื้อเพลงไม่สำเร็จ') : 'ไม่พบเสียงร้องในไฟล์เพลงนี้');
+      if (!merged.length) throw makeError(failed.length ? (lastErrMsg || 'ถอดเนื้อเพลงไม่สำเร็จ') : 'ไม่พบเสียงร้องในไฟล์นี้');
 
       const incomplete = failed.length > 0;
       setTranscribeProgress(100, incomplete
@@ -1680,7 +1895,7 @@ ${JSON.stringify(indexedInput)}
 
       if (cancelRequested) showToast('⏹ หยุดการถอดเนื้อเพลงแล้ว (เก็บเนื้อเพลงที่ถอดได้ไว้ให้แล้ว)');
       else if (list.length > 1) {
-        showToast(`✅ ถอดเสร็จ ${summary.ok} เพลง` + (summary.partial ? `, บางส่วน ${summary.partial}` : '') + (summary.failed ? `, ไม่สำเร็จ ${summary.failed}` : ''));
+        showToast(`✅ ถอดเสร็จ ${summary.ok} รายการ` + (summary.partial ? `, บางส่วน ${summary.partial}` : '') + (summary.failed ? `, ไม่สำเร็จ ${summary.failed}` : ''));
       }
     }
 
@@ -1692,19 +1907,20 @@ ${JSON.stringify(indexedInput)}
     }
 
     async function transcribeCurrentTrack100() {
-      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มและเลือกเพลง MP3 ก่อนกดถอดเนื้อเพลง');
-      if (isTranscribing) return showToast(`กำลังถอดเนื้อเพลง "${transcribeHeaderTitle}" อยู่ — กด ⏹ หยุด ก่อนหากต้องการเปลี่ยนเพลง`);
+      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มและเลือกไฟล์ก่อนกดถอดเนื้อเพลง');
+      if (isTranscribing) return showToast(`กำลังถอดเนื้อเพลง "${transcribeHeaderTitle}" อยู่ — กด ⏹ หยุด ก่อนหากต้องการเปลี่ยน`);
       const track = tracks[currentTrackIndex];
       if (!track) return;
-      if (track.lyrics && track.lyrics.length && !confirm(`เพลง "${track.title}" มีเนื้อเพลงอยู่แล้ว ต้องการถอดใหม่และแทนที่ใช่ไหม?`)) return;
+      if (track.lyrics && track.lyrics.length && !confirm(`"${track.title}" มีเนื้อเพลงอยู่แล้ว ต้องการถอดใหม่และแทนที่ใช่ไหม?`)) return;
       await runTranscribeQueue([track]);
     }
 
     async function transcribeAllTracks() {
-      if (!tracks.length) return showToast('ยังไม่มีเพลงในคลัง');
+      const catTracks = tracks.filter((t) => getTrackMediaType(t) === currentMediaCategory);
+      if (!catTracks.length) return showToast('ยังไม่มีรายการในหมวดนี้');
       if (isTranscribing) return showToast(`กำลังถอดเนื้อเพลง "${transcribeHeaderTitle}" อยู่`);
-      const pending = tracks.filter((t) => !(t.lyrics && t.lyrics.length));
-      if (!pending.length) return showToast('ทุกเพลงในคลังมีเนื้อเพลงแล้ว');
+      const pending = catTracks.filter((t) => !(t.lyrics && t.lyrics.length));
+      if (!pending.length) return showToast('ทุกรายการในหมวดนี้มีเนื้อเพลงแล้ว');
       closeModal('libraryModal');
       await runTranscribeQueue(pending);
     }
@@ -1726,6 +1942,9 @@ ${JSON.stringify(indexedInput)}
         await saveTrackToDB(track);
         renderLyrics();
         renderTrackLists();
+        if (!document.getElementById('lyricEditorModal').classList.contains('hidden')) {
+          document.getElementById('lyricEditorTextarea').value = (track.lyrics || []).map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n');
+        }
         showToast('✅ ตรวจแก้คำสะกดเนื้อเพลงเรียบร้อย 100%!');
       } catch (err) {
         showToast('❌ ตรวจแก้คำสะกดไม่สำเร็จ: ' + err.message);
@@ -1820,13 +2039,14 @@ ${JSON.stringify(indexedInput)}
 
     function updateKaraokeSync() {
       const track = tracks[currentTrackIndex];
-      if (!track || !track.lyrics || !track.lyrics.length) return;
+      if (!track || !track.lyrics || !track.lyrics.length) { updateVideoCaption(null, 0); return; }
       const t = audioEl.currentTime + syncOffset;
       const lyrics = track.lyrics;
       let activeIdx = -1;
       for (let i = 0; i < lyrics.length; i++) {
         if (t >= lyrics[i].start && t <= lyrics[i].end) { activeIdx = i; break; }
       }
+      updateVideoCaption(activeIdx >= 0 ? lyrics[activeIdx] : null, t);
       ['main', 'full'].forEach((prefix) => {
         for (let i = 0; i < lyrics.length; i++) {
           const lineEl = document.getElementById(`${prefix}-line-${i}`);
@@ -1869,12 +2089,33 @@ ${JSON.stringify(indexedInput)}
       showToast(`⏱️ ปรับจังหวะเนื้อเพลง: ${syncOffset >= 0 ? '+' : ''}${syncOffset.toFixed(2)}s`);
     }
 
+    function resetSyncOffset() {
+      syncOffset = 0;
+      const badge = document.getElementById('syncOffsetBadge');
+      if (badge) badge.textContent = '+0.00s';
+      showToast('⏱️ รีเซ็ตจังหวะเนื้อเพลงเป็น +0.00s');
+    }
+
     let tapSyncCursor = 0;
+    function updateEditModalControls() {
+      const btn = document.getElementById('editModalVideoToggleBtn');
+      const lbl = document.getElementById('editModalVideoToggleLabel');
+      if (!btn || !lbl) return;
+      if (!videoAvailable) {
+        lbl.textContent = '🎬 ไม่มีวิดีโอ';
+        btn.className = 'col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/80 font-bold flex items-center justify-center gap-1';
+      } else {
+        lbl.textContent = videoShown ? '🎤 หน้าเนื้อเพลง' : '🎬 หน้าจอวิดีโอ';
+        btn.className = 'col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-extrabold flex items-center justify-center gap-1';
+      }
+    }
+
     function openLyricEditorModal() {
-      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มเพลง MP3 ก่อนแก้ไขเนื้อเพลง');
+      if (currentTrackIndex < 0) return showToast('กรุณาเพิ่มไฟล์ก่อนเปิดหน้าต่างแก้ไข');
       const track = tracks[currentTrackIndex];
       document.getElementById('lyricEditorTextarea').value = (track.lyrics || []).map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n');
       tapSyncCursor = 0;
+      updateEditModalControls();
       openModal('lyricEditorModal');
     }
 
@@ -1929,59 +2170,13 @@ ${JSON.stringify(indexedInput)}
       a.click();
     }
 
-    function buildVisMenu() {
-      document.getElementById('visModeOptionsList').innerHTML = VIS_MODES.map((m, idx) => `
-        <button type="button" onclick="selectVisualizerMode(${idx})"
-          class="w-full text-left px-2 py-1.5 rounded-xl flex items-center gap-1.5 transition ${idx === visModeIndex ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 font-extrabold shadow-sm' : 'bg-slate-900/70 hover:bg-slate-800 border border-slate-800/80 text-slate-200 font-semibold'}">
-          <span class="text-sm shrink-0">${m.icon}</span>
-          <div class="min-w-0">
-            <div class="text-[11px] truncate">${idx + 1}. ${m.name}</div>
-            <div class="text-[9px] text-slate-400 truncate">${m.desc}</div>
-          </div>
-        </button>
-      `).join('');
-    }
-
-    function toggleVisPopover(e) {
-      e.stopPropagation();
-      const menu = document.getElementById('visPopoverMenu');
-      if (!menu.classList.contains('hidden')) return menu.classList.add('hidden');
-      buildVisMenu();
-      const rect = e.currentTarget.getBoundingClientRect();
-      menu.style.top = `${rect.bottom + 6}px`;
-      menu.style.right = `${Math.max(12, window.innerWidth - rect.right)}px`;
-      menu.classList.remove('hidden');
-    }
-
-    function selectVisualizerMode(idx) {
-      visModeIndex = idx; visEnabled = true;
-      const mode = VIS_MODES[visModeIndex];
-      document.getElementById('visModeCaption').textContent = `${mode.icon} ${mode.name} (${visModeIndex + 1}/${VIS_MODES.length}) — ${mode.desc}`;
-      document.getElementById('visBtnLabel').textContent = `${mode.icon} ${mode.name} ▾`;
-      document.getElementById('visPopoverMenu').classList.add('hidden');
-    }
-
     function cycleVisualizerMode() {
-      selectVisualizerMode((visModeIndex + 1) % VIS_MODES.length);
+      visModeIndex = (visModeIndex + 1) % VIS_MODES.length;
+      visEnabled = true;
+      const mode = VIS_MODES[visModeIndex];
+      document.getElementById('visModeCaption').textContent = `${mode.icon} ${mode.name}`;
+      showToast(`${mode.icon} คลื่นเสียงแบบที่ ${visModeIndex + 1}/18: ${mode.name}`);
     }
-
-    function randomVisualizerMode() {
-      let next = Math.floor(Math.random() * VIS_MODES.length);
-      if (next === visModeIndex && VIS_MODES.length > 1) next = (next + 1) % VIS_MODES.length;
-      selectVisualizerMode(next);
-      showToast(`🎲 สุ่มคลื่นเสียง: ${VIS_MODES[next].icon} ${VIS_MODES[next].name}`);
-    }
-
-    function toggleVisualizerEnabled() {
-      visEnabled = !visEnabled;
-      document.getElementById('visPowerToggleBtn').textContent = visEnabled ? 'เปิดอยู่' : 'ปิดคลื่น';
-      document.getElementById('visPopoverMenu').classList.add('hidden');
-    }
-
-    document.addEventListener('click', (e) => {
-      const menu = document.getElementById('visPopoverMenu'), trig = document.getElementById('visDropdownTrigger');
-      if (menu && !menu.contains(e.target) && trig && !trig.contains(e.target)) menu.classList.add('hidden');
-    });
 
     function initParticles() {
       particles = Array.from({ length: 55 }, () => ({
@@ -2025,6 +2220,9 @@ ${JSON.stringify(indexedInput)}
             document.getElementById('durationTimeLabel').textContent = formatTime(audioEl.duration);
             document.getElementById('fullCurrentTime').textContent = formatTime(audioEl.currentTime);
             document.getElementById('fullDurationTime').textContent = formatTime(audioEl.duration);
+            document.getElementById('vidSeekSlider').value = pct;
+            document.getElementById('vidCurrentTime').textContent = formatTime(audioEl.currentTime);
+            document.getElementById('vidDuration').textContent = formatTime(audioEl.duration);
             if (!audioEl.paused) savePlaybackState(false);
           }
           updateKaraokeSync();
@@ -2340,18 +2538,220 @@ ${JSON.stringify(indexedInput)}
       requestAnimationFrame(frame);
     }
 
+    /* ===== VIDEO (BOTTOM STAGE + UNIFIED FULLSCREEN / EXPAND) ===== */
+    let videoAvailable = false;
+    let userWantsVideo = true;
+    let videoShown = false;
+    let videoExpanded = false;
+    let lastVidCapText = '';
+    let vidHudFadeTimer = null;
+
+    function isVideoCurrentlyFullscreen() {
+      const wrap = document.getElementById('videoWrap');
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      return fsEl === wrap || videoExpanded;
+    }
+
+    function showVideoFsHudTemporarily() {
+      document.querySelectorAll('.vid-fs-hud').forEach((el) => el.classList.remove('hud-faded'));
+      clearTimeout(vidHudFadeTimer);
+      if (isVideoCurrentlyFullscreen() && isPlaying) {
+        vidHudFadeTimer = setTimeout(() => {
+          if (isVideoCurrentlyFullscreen() && isPlaying) {
+            document.querySelectorAll('.vid-fs-hud').forEach((el) => el.classList.add('hud-faded'));
+          }
+        }, 3200);
+      }
+    }
+
+    function updateUnifiedFullButtons() {
+      const expandIcon = document.getElementById('expandStageIcon');
+      const expandLabel = document.getElementById('expandStageLabel');
+      const fullLyricToVidBtn = document.getElementById('fullViewToVideoBtn');
+      const isFullLyricOpen = !document.getElementById('fullLyricsView').classList.contains('hidden');
+      const isVidFs = isVideoCurrentlyFullscreen();
+
+      if (fullLyricToVidBtn) {
+        fullLyricToVidBtn.classList.toggle('hidden', !videoAvailable);
+      }
+
+      if (expandIcon && expandLabel) {
+        if (videoAvailable) {
+          expandIcon.textContent = isVidFs ? '🗗' : '⛶';
+          expandLabel.textContent = isVidFs ? 'ย่อหน้าจอ' : 'ขยายหน้าจอ';
+        } else {
+          expandIcon.textContent = isFullLyricOpen ? '✕' : '🎤';
+          expandLabel.textContent = isFullLyricOpen ? 'ปิดเต็มจอ' : 'ขยายหน้าจอ';
+        }
+      }
+      updateEditModalControls();
+    }
+
+    function refreshVideoStage() {
+      videoShown = videoAvailable && userWantsVideo;
+      const wrap = document.getElementById('videoWrap');
+      wrap.classList.toggle('hidden', !videoShown);
+      wrap.classList.toggle('pointer-events-none', !videoShown);
+      if (!videoShown) {
+        updateVideoCaption(null, 0);
+        if (isVideoCurrentlyFullscreen()) exitVideoFullscreenState();
+      }
+      updateUnifiedFullButtons();
+    }
+
+    function toggleVideoView() {
+      if (!videoAvailable) return showToast('รายการนี้เป็นไฟล์เสียง ไม่มีภาพวิดีโอ');
+      userWantsVideo = !userWantsVideo;
+      refreshVideoStage();
+    }
+
+    function switchFullLyricsToVideo() {
+      setActiveView('main');
+      userWantsVideo = true;
+      refreshVideoStage();
+      toggleVideoFullscreen();
+    }
+
+    function handleUnifiedFullBtn() {
+      if (videoAvailable) {
+        if (!userWantsVideo) {
+          userWantsVideo = true;
+          refreshVideoStage();
+        }
+        toggleVideoFullscreen();
+      } else {
+        const isOpen = !document.getElementById('fullLyricsView').classList.contains('hidden');
+        setActiveView(isOpen ? 'main' : 'full');
+      }
+    }
+
+    function videoWrapTap(e) {
+      e.stopPropagation();
+      if (isVideoCurrentlyFullscreen()) showVideoFsHudTemporarily();
+      togglePlayPause();
+    }
+
+    function exitVideoFullscreenState(e) {
+      if (e) e.stopPropagation();
+      videoExpanded = false;
+      clearTimeout(vidHudFadeTimer);
+      document.querySelectorAll('.vid-fs-hud').forEach((el) => el.classList.remove('hud-faded'));
+      const wrap = document.getElementById('videoWrap');
+      wrap.classList.remove('vid-expanded');
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {}
+      }
+      updateUnifiedFullButtons();
+    }
+
+    function toggleVideoFullscreen(e) {
+      if (e) e.stopPropagation();
+      if (!videoAvailable) return;
+      if (!userWantsVideo) {
+        userWantsVideo = true;
+        refreshVideoStage();
+      }
+      const wrap = document.getElementById('videoWrap');
+      if (isVideoCurrentlyFullscreen()) {
+        exitVideoFullscreenState();
+        return;
+      }
+
+      videoExpanded = true;
+      wrap.classList.add('vid-expanded');
+      updateUnifiedFullButtons();
+      showVideoFsHudTemporarily();
+
+      const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
+      if (req) {
+        try {
+          const p = req.call(wrap);
+          if (p && p.catch) p.catch(() => {});
+        } catch {}
+      }
+    }
+
+    document.getElementById('videoWrap').addEventListener('mousemove', () => {
+      if (isVideoCurrentlyFullscreen()) showVideoFsHudTemporarily();
+    });
+    document.getElementById('videoWrap').addEventListener('touchstart', () => {
+      if (isVideoCurrentlyFullscreen()) showVideoFsHudTemporarily();
+    }, { passive: true });
+
+    document.addEventListener('fullscreenchange', () => {
+      const wrap = document.getElementById('videoWrap');
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!fsEl && videoExpanded) {
+        videoExpanded = false;
+        wrap.classList.remove('vid-expanded');
+      }
+      updateUnifiedFullButtons();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isVideoCurrentlyFullscreen()) {
+        exitVideoFullscreenState();
+      }
+    });
+
+    function updateVideoCaption(line, t) {
+      if (!videoShown) return;
+      const pill = document.getElementById('vidCapPill');
+      const base = document.getElementById('vidCapBase');
+      const fill = document.getElementById('vidCapFill');
+      if (!line) {
+        if (lastVidCapText !== '') {
+          lastVidCapText = '';
+          base.textContent = ''; fill.textContent = '';
+          pill.classList.add('empty');
+        }
+        return;
+      }
+      if (line.text !== lastVidCapText) {
+        lastVidCapText = line.text;
+        base.textContent = line.text; fill.textContent = line.text;
+        pill.classList.remove('empty');
+      }
+      fill.style.clipPath = `inset(0 ${(100 - computeWordSweepPct(line, t)).toFixed(2)}% 0 0)`;
+    }
+
+    audioEl.addEventListener('loadedmetadata', () => {
+      videoAvailable = audioEl.videoWidth > 0;
+      if (videoAvailable) userWantsVideo = true;
+      refreshVideoStage();
+    });
+    audioEl.addEventListener('emptied', () => { videoAvailable = false; lastVidCapText = ''; refreshVideoStage(); });
+    audioEl.addEventListener('error', () => {
+      if (audioEl.getAttribute('src')) showToast('⚠️ เบราว์เซอร์เล่นไฟล์นี้ไม่ได้ (รูปแบบหรือโคเดกไม่รองรับ) ลองแปลงเป็น MP4 (H.264) หรือ WEBM');
+    });
+
+    function openGoogleModal() {
+      openModal('googleModal');
+      setTimeout(() => { try { document.getElementById('googleQueryInput').focus(); } catch {} }, 60);
+    }
+
+    function runGoogleOpen() {
+      const raw = (document.getElementById('googleQueryInput').value || '').trim();
+      if (!raw) return showToast('พิมพ์คำค้นหา หรือวางลิงก์ก่อน');
+      let url;
+      if (/^https?:\/\//i.test(raw)) url = raw;
+      else if (!/\s/.test(raw) && /^(www\.)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(raw)) url = 'https://' + raw;
+      else url = 'https://www.google.com/search?q=' + encodeURIComponent(raw);
+      const w = window.open(url, '_blank', 'noopener');
+      if (!w) location.href = url;
+      closeModal('googleModal');
+    }
+
     function setActiveView(view) {
       const fullView = document.getElementById('fullLyricsView');
-      const tabMain = document.getElementById('tabMainView'), tabFull = document.getElementById('tabFullLyricsView');
       if (view === 'full') {
+        if (isVideoCurrentlyFullscreen()) exitVideoFullscreenState();
         fullView.classList.remove('hidden');
-        tabFull.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-pink-500/25 text-pink-300 border border-pink-400/50 whitespace-nowrap';
-        tabMain.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 text-slate-300 border border-slate-700/80 whitespace-nowrap';
       } else {
         fullView.classList.add('hidden');
-        tabMain.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 whitespace-nowrap';
-        tabFull.className = 'px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800/85 text-slate-300 border border-slate-700/80 whitespace-nowrap';
       }
+      updateUnifiedFullButtons();
     }
 
     function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
@@ -2377,8 +2777,8 @@ ${JSON.stringify(indexedInput)}
     }
 
     audioEl.addEventListener('ended', () => { if (!isLoop) playNextTrack(); });
-    audioEl.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); savePlaybackState(true); });
-    audioEl.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); savePlaybackState(true); });
+    audioEl.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); savePlaybackState(true); if (isVideoCurrentlyFullscreen()) showVideoFsHudTemporarily(); });
+    audioEl.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); savePlaybackState(true); if (isVideoCurrentlyFullscreen()) showVideoFsHudTemporarily(); });
 
     (async function initApp() {
       buildEqControls();
@@ -2406,8 +2806,6 @@ ${JSON.stringify(indexedInput)}
       const savedTracks = await loadTracksFromDB();
       if (savedTracks.length) {
         tracks = savedTracks;
-        renderTrackLists();
-
         let resumeIdx = 0;
         let resumeTime = 0;
         let shouldAutoPlay = false;
@@ -2420,10 +2818,12 @@ ${JSON.stringify(indexedInput)}
             shouldAutoPlay = !!savedState.wasPlaying;
           }
         }
+        currentMediaCategory = getTrackMediaType(tracks[resumeIdx]);
+        renderTrackLists();
 
         selectAndPlayTrack(resumeIdx, resumeTime, shouldAutoPlay);
         if (resumeTime > 0) {
-          showToast(`⏯️ กู้คืนเพลง "${tracks[resumeIdx].title}" ต่อจากนาทีที่ ${formatTime(resumeTime)}`);
+          showToast(`⏯️ กู้คืน "${tracks[resumeIdx].title}" ต่อจากนาทีที่ ${formatTime(resumeTime)}`);
         }
       } else {
         renderTrackLists();
