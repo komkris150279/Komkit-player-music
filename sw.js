@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neonsync-studio-offline-v4';
+const CACHE_NAME = 'neonsync-studio-offline-v5';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -47,4 +47,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
