@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="NeonSync 100%" />
-  <link rel="manifest" href="./manifest.json?v=5" />
-  <link rel="icon" type="image/png" href="./icon-512.png" />
-  <link rel="apple-touch-icon" href="./icon-512.png" />
+  <link rel="manifest" href="./manifest.json?v=6" />
+  <link rel="icon" type="image/jpeg" href="./icon-512.jpg" />
+  <link rel="apple-touch-icon" href="./icon-512.jpg" />
   <title>NeonSync Studio 100% — เครื่องเล่น MP3 &amp; วิดีโอเพลง Hi-Fi Stereo HD</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -174,7 +174,7 @@
       <div class="flex items-center gap-1 min-w-0">
         <div class="flex items-center gap-1.5 pr-1 shrink-0">
           <div class="w-6 h-6 rounded-lg overflow-hidden shrink-0 shadow border border-cyan-400/50 bg-black flex items-center justify-center">
-            <img src="./icon-512.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'" />
+            <img src="./icon-512.jpg" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'" />
           </div>
           <span class="font-extrabold text-xs tracking-tight bg-gradient-to-r from-cyan-300 via-white to-pink-400 bg-clip-text text-transparent hidden md:inline">NeonSync 100%</span>
         </div>
@@ -237,7 +237,7 @@
               class="min-w-0 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 active:scale-[0.97] text-slate-950 font-extrabold flex items-center justify-center gap-1 px-1.5 shadow whitespace-nowrap overflow-hidden">
               <span>➕</span><span class="truncate">เพิ่มเพลง</span>
             </button>
-            <button type="button" onclick="transcribeAllTracks()" title="ถอดเนื้อเพลงทั้งหมดในหมวดนี้"
+            <button type="button" onclick="transcribeAllTracks()" title="ถอดเนื้อเพลงทั้งหมดในหมวดนี้ (Auto-Save .LRC)"
               class="ai-glow-btn min-w-0 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 active:scale-[0.97] text-white font-extrabold flex items-center justify-center gap-1 px-1.5 border border-pink-300/30 whitespace-nowrap overflow-hidden">
               <span>✨</span><span class="truncate">ถอดทั้งคลัง</span>
             </button>
@@ -299,7 +299,7 @@
             <div class="w-11 h-11 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl mb-2">🎤</div>
             <h2 class="text-sm sm:text-base font-extrabold text-white mb-1">เวทีเนื้อเพลง &amp; วิดีโอคาราโอเกะพร้อมใช้งาน 100%</h2>
             <p class="text-[11px] text-slate-400 max-w-sm mb-3">
-              กดปุ่ม <span class="text-cyan-300 font-bold">"+ เพิ่มเพลง"</span> เพื่อเลือกไฟล์เสียงหรือวิดีโอจากมือถือ (ระบบเสียง Hi-Fi Stereo HD 100% เล่นตอนไม่มีเน็ตได้) แล้วกด <span class="text-amber-300 font-bold">"⚙️ แก้ไข"</span> เพื่อถอดเนื้อเพลงและตั้งค่า
+              กดปุ่ม <span class="text-cyan-300 font-bold">"+ เพิ่มเพลง"</span> เพื่อเลือกไฟล์เสียงหรือวิดีโอจากมือถือ (ระบบเสียง Hi-Fi Stereo HD 100% และ Auto-Save .LRC ลงเครื่องอัตโนมัติ)
             </p>
             <div class="flex flex-wrap items-center justify-center gap-2">
               <button type="button" onclick="openApiKeyModal()" class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs">
@@ -450,12 +450,13 @@
           🎬 โฟลเดอร์ไฟล์วิดีโอ (0)
         </button>
       </div>
-      <div class="flex flex-wrap gap-2 mb-3">
-        <button type="button" onclick="triggerFilePicker()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs inline-flex items-center">
-          ➕ เพิ่มไฟล์ MP3 / วิดีโอ / .LRC
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        <button type="button" onclick="triggerFilePicker()" class="px-2.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs inline-flex items-center">
+          ➕ เพิ่มไฟล์
         </button>
-        <button id="modalTranscribeCatBtn" type="button" onclick="transcribeAllTracks()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-xs">✨ ถอดเนื้อหมวดนี้</button>
-        <button id="modalClearCatBtn" type="button" onclick="clearCurrentCategoryTracks()" class="px-3 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs ml-auto">🗑️ ล้างหมวดนี้</button>
+        <button id="modalTranscribeCatBtn" type="button" onclick="transcribeAllTracks()" class="px-2.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-extrabold text-xs">✨ ถอดเนื้อหมวดนี้</button>
+        <button type="button" onclick="exportAllLyricsBatch()" class="px-2.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 font-extrabold text-xs">📦 โหลด .LRC ทั้งหมด</button>
+        <button id="modalClearCatBtn" type="button" onclick="clearCurrentCategoryTracks()" class="px-2.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-bold text-xs ml-auto">🗑️ ล้างหมวดนี้</button>
       </div>
       <div id="modalTrackList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1"></div>
     </div>
@@ -497,11 +498,11 @@
     </div>
   </div>
 
-  <!-- UNIFIED EDIT STUDIO MODAL -->
+  <!-- UNIFIED EDIT STUDIO MODAL (WITH AUTO-SAVE .LRC TOGGLE) -->
   <div id="lyricEditorModal" class="hidden fixed inset-0 z-[900] bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
     <div class="w-full max-w-xl max-h-[90vh] bg-[#0c1326] border border-slate-700 rounded-2xl p-4 flex flex-col shadow-2xl">
       <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
-        <h3 class="text-sm font-extrabold text-white">⚙️ แก้ไขเนื้อเพลง / ซิงค์ / ควบคุมหน้าจอ</h3>
+        <h3 class="text-sm font-extrabold text-white">⚙️ แก้ไขเนื้อเพลง / ซิงค์ / Auto-Save .LRC</h3>
         <button type="button" onclick="closeModal('lyricEditorModal')" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
       </div>
 
@@ -515,17 +516,17 @@
         <button type="button" onclick="exportCurrentLrc()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-bold flex items-center justify-center gap-1">
           <span>💾</span><span>ส่งออก .LRC</span>
         </button>
-        <button id="editModalVideoToggleBtn" type="button" onclick="toggleVideoView(); updateEditModalControls();" class="col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-center gap-1">
+        <button id="autoExportLrcBtn" type="button" onclick="toggleAutoExportLrc()" class="px-2.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/45 font-extrabold flex items-center justify-center gap-1">
+          <span>⚡</span><span id="autoExportLrcLabel">Auto-Save: เปิด</span>
+        </button>
+        <button id="editModalVideoToggleBtn" type="button" onclick="toggleVideoView(); updateEditModalControls();" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-center gap-1">
           <span id="editModalVideoToggleLabel">🎬 ไม่มีวิดีโอ</span>
         </button>
-        <div class="col-span-2 flex items-center justify-between bg-slate-900 border border-slate-700/90 rounded-xl px-2.5 py-1.5">
-          <span class="text-[11px] font-bold text-slate-400">⏱️ จังหวะ:</span>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-extrabold">-0.1s</button>
-            <span id="syncOffsetBadge" class="font-mono text-cyan-300 font-extrabold text-xs">+0.00s</span>
-            <button type="button" onclick="adjustSyncOffset(0.1)" class="px-2 py-0.5 rounded bg-slate-800 text-pink-300 font-extrabold">+0.1s</button>
-            <button type="button" onclick="resetSyncOffset()" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">รีเซ็ต</button>
-          </div>
+        <div class="col-span-2 sm:col-span-1 flex items-center justify-between bg-slate-900 border border-slate-700/90 rounded-xl px-2 py-1.5">
+          <button type="button" onclick="adjustSyncOffset(-0.1)" class="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-extrabold">-0.1s</button>
+          <span id="syncOffsetBadge" class="font-mono text-cyan-300 font-extrabold text-[11px]">+0.00s</span>
+          <button type="button" onclick="adjustSyncOffset(0.1)" class="px-1.5 py-0.5 rounded bg-slate-800 text-pink-300 font-extrabold">+0.1s</button>
+          <button type="button" onclick="resetSyncOffset()" class="px-1 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">รี</button>
         </div>
       </div>
 
@@ -2025,7 +2026,7 @@ ${JSON.stringify(indexedInput)}
       const incomplete = failed.length > 0;
       setTranscribeProgress(100, incomplete
         ? `⚠️ ถอดได้ ${merged.length} บรรทัด (ข้ามช่วงที่ ${failed.map((i) => i + 1).join(', ')})`
-        : `✅ ถอดเนื้อเพลงละเอียดครบ ${merged.length} บรรทัด (ตรวจคำสะกดแล้ว)`);
+        : `✅ ถอดเนื้อเพลงละเอียดครบ ${merged.length} บรรทัด` + (autoExportLrcEnabled ? ' + บันทึก .LRC อัตโนมัติแล้ว' : ''));
       return { status: incomplete ? 'partial' : 'ok', count: merged.length, failed };
     }
 
@@ -2063,10 +2064,12 @@ ${JSON.stringify(indexedInput)}
             if (r.status === 'cancelled') break;
             if (r.status === 'ok') {
               summary.ok++;
-              showToast(`✨ ถอดเนื้อเพลง "${track.title}" สำเร็จ (${r.count} บรรทัด)`);
+              if (autoExportLrcEnabled) downloadLrcFile(track);
+              showToast(`✨ ถอดเนื้อเพลง "${track.title}" สำเร็จ` + (autoExportLrcEnabled ? ' + บันทึก .LRC อัตโนมัติแล้ว' : ` (${r.count} บรรทัด)`));
             } else {
               summary.partial++;
-              showToast(`⚠️ "${track.title}" ถอดได้บางส่วน (${r.count} บรรทัด) กดถอดใหม่เพื่อลองอีกครั้ง`);
+              if (autoExportLrcEnabled && track.lyrics?.length) downloadLrcFile(track);
+              showToast(`⚠️ "${track.title}" ถอดได้บางส่วน (${r.count} บรรทัด)`);
             }
           } catch (err) {
             hadError = true;
@@ -2299,11 +2302,12 @@ ${JSON.stringify(indexedInput)}
       if (!btn || !lbl) return;
       if (!videoAvailable) {
         lbl.textContent = '🎬 ไม่มีวิดีโอ';
-        btn.className = 'col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/80 font-bold flex items-center justify-center gap-1';
+        btn.className = 'px-2.5 py-2 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/80 font-bold flex items-center justify-center gap-1';
       } else {
         lbl.textContent = videoShown ? '🎤 หน้าเนื้อเพลง' : '🎬 หน้าจอวิดีโอ';
-        btn.className = 'col-span-2 sm:col-span-1 px-2.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-extrabold flex items-center justify-center gap-1';
+        btn.className = 'px-2.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-extrabold flex items-center justify-center gap-1';
       }
+      updateAutoExportLrcUI();
     }
 
     function openLyricEditorModal() {
@@ -2357,13 +2361,58 @@ ${JSON.stringify(indexedInput)}
       return items;
     }
 
-    function exportCurrentLrc() {
-      if (currentTrackIndex < 0 || !tracks[currentTrackIndex].lyrics.length) return showToast('ยังไม่มีเนื้อเพลงสำหรับส่งออก');
-      const track = tracks[currentTrackIndex];
+    let autoExportLrcEnabled = localStorage.getItem('neonsync_auto_export_lrc') !== 'false';
+
+    function updateAutoExportLrcUI() {
+      const btn = document.getElementById('autoExportLrcBtn');
+      const lbl = document.getElementById('autoExportLrcLabel');
+      if (!btn || !lbl) return;
+      lbl.textContent = autoExportLrcEnabled ? 'Auto-Save: เปิด' : 'Auto-Save: ปิด';
+      btn.className = autoExportLrcEnabled
+        ? 'px-2.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/45 font-extrabold flex items-center justify-center gap-1'
+        : 'px-2.5 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 font-bold flex items-center justify-center gap-1';
+    }
+
+    function toggleAutoExportLrc() {
+      autoExportLrcEnabled = !autoExportLrcEnabled;
+      localStorage.setItem('neonsync_auto_export_lrc', autoExportLrcEnabled ? 'true' : 'false');
+      updateAutoExportLrcUI();
+      showToast(autoExportLrcEnabled ? '⚡ เปิดบันทึกไฟล์ .LRC อัตโนมัติหลังถอดเนื้อเพลงแล้ว' : '⏸️ ปิดการบันทึกไฟล์ .LRC อัตโนมัติ');
+    }
+
+    function downloadLrcFile(track) {
+      if (!track || !track.lyrics || !track.lyrics.length) return false;
+      const content = track.lyrics.map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n');
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([track.lyrics.map((l) => `[${formatLrcTimestamp(l.start)}] ${l.text}`).join('\n')], { type: 'text/plain;charset=utf-8' }));
+      a.href = url;
       a.download = `${track.title}.lrc`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      return true;
+    }
+
+    function exportCurrentLrc() {
+      if (currentTrackIndex < 0 || !tracks[currentTrackIndex].lyrics.length) {
+        return showToast('ยังไม่มีเนื้อเพลงสำหรับส่งออก');
+      }
+      const track = tracks[currentTrackIndex];
+      downloadLrcFile(track);
+      showToast(`💾 บันทึก "${track.title}.lrc" ลงโฟลเดอร์ Downloads แล้ว`);
+    }
+
+    async function exportAllLyricsBatch() {
+      const readyTracks = tracks.filter((t) => t.lyrics && t.lyrics.length > 0);
+      if (!readyTracks.length) return showToast('ยังไม่มีเพลงที่ถอดเนื้อเพลงแล้วในคลัง');
+      showToast(`📦 กำลังบันทึกไฟล์ .LRC ทั้งหมด ${readyTracks.length} เพลง...`);
+      for (let i = 0; i < readyTracks.length; i++) {
+        downloadLrcFile(readyTracks[i]);
+        await new Promise((r) => setTimeout(r, 450));
+      }
+      showToast(`✅ บันทึกครบทั้ง ${readyTracks.length} เพลงเรียบร้อย!`);
     }
 
     function cycleVisualizerMode() {
@@ -2981,6 +3030,7 @@ ${JSON.stringify(indexedInput)}
       buildEqControls();
       setBassBoost(currentBassBoost, false);
       setEchoWet(currentEchoWet, false);
+      updateAutoExportLrcUI();
       initParticles();
       updateApiKeyIndicator();
       startRenderLoop();
